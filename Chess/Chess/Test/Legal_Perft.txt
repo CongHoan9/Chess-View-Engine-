@@ -1,0 +1,38 @@
+rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+
+Depth 1 : 20
+Depth 2 : 400
+Depth 3 : 8,902
+Depth 4 : 197,281
+Depth 5 : 4,865,609
+Depth 6 : 119,060,324
+Depth 7 : 3,195,901,860
+Depth 8 : 84,998,978,956
+Depth 9 : 2,439,530,234,167
+Depth 10: 69,352,859,712,417
+Depth 11 : 2,097,651,002,250,061
+Depth 12 : 62,829,306,580,334,464
+Depth 13 : 1,981,066,775,000,396,239
+Depth 14 : 61,833,020,720,140,730,713
+Depth 15 : 2,015,099,950,053,364,471,960
+Depth 16 : 67,038,041,056,967,140,970,056
+Depth 17 : 2,241,706,104,675,698,447,514,733
+Depth 18 : 75,468,558,865,938,044,960,038,642
+Depth 19 : 2,551,502,145,045,761,772,177,204,123
+Depth 20 : 86,573,859,278,366,941,080,844,369,039
+
+
+r3k2r/p1pp1pb1/bn2Qnp1/2qPN3/1p2P3/2N2N2/PPPB2PP/R3K2R w KQkq - 0 1
+
++ Cả hai bên còn đủ quyền castling
++ Nhiều pinned piece
++ Nước bắt phức tạp
++ Check tiềm ẩn
++ Discovered attack
+
+Depth 1: 47
+Depth 2: 586
+Depth 3: 25423
+Depth 4: 1085555
+Depth 5: 37389923
+Depth 6: 1440467386

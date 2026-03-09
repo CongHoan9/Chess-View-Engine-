@@ -25,7 +25,7 @@ namespace Chess
             previous->CheckSquares[(int)EPieceType.Knight - 1] = BitBoard.AttacksBB<SKnight>(ksq);
             previous->CheckSquares[(int)EPieceType.Bishop - 1] = BitBoard.AttacksBB<SBishop>(ksq, GetPieces());
             previous->CheckSquares[(int)EPieceType.Rook - 1] = BitBoard.AttacksBB<SRook>(ksq, GetPieces());
-            previous->CheckSquares[(int)EPieceType.Queen - 1] = previous->CheckSquares[(int)EPieceType.Bishop] | previous->CheckSquares[(int)EPieceType.Rook];
+            previous->CheckSquares[(int)EPieceType.Queen - 1] = previous->CheckSquares[(int)EPieceType.Bishop - 1] | previous->CheckSquares[(int)EPieceType.Rook - 1];
             previous->CheckSquares[(int)EPieceType.King - 1] = 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -498,3 +498,4 @@ namespace Chess
         }
     }
 }
+

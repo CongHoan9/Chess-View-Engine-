@@ -3,72 +3,72 @@ using System.Runtime.InteropServices;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pieces<P1, P2> : IPieceTypes where P1 : struct, IPieceTypes where P2 : struct, IPieceTypes
+    public readonly struct SPieces<P1, P2> : IPieceTypes where P1 : struct, IPieceTypes where P2 : struct, IPieceTypes
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BitBoard Get(BitBoard[] bb)
+        public static SBitBoard Get(SBitBoard[] bb)
         {
             return P1.Get(bb) | P2.Get(bb);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn : IPieceType, IPieceTypes
+    public readonly struct SPawn : IPieceType, IPieceTypes
     {
-        public static PieceType Type => PieceType.Pawn;
+        public static EPieceType Type => EPieceType.Pawn;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BitBoard Get(BitBoard[] bb)
+        public static SBitBoard Get(SBitBoard[] bb)
         {
-            return bb[(int)PieceType.Pawn];
+            return bb[(int)EPieceType.Pawn];
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Knight : IPieceType, IPieceTypes
+    public readonly struct SKnight : IPieceType, IPieceTypes
     {
-        public static PieceType Type => PieceType.Knight;
+        public static EPieceType Type => EPieceType.Knight;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BitBoard Get(BitBoard[] bb)
+        public static SBitBoard Get(SBitBoard[] bb)
         {
-            return bb[(int)PieceType.Knight];
+            return bb[(int)EPieceType.Knight];
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Bishop : IPieceType, IPieceTypes, IMagic
+    public readonly struct SBishop : IPieceType, IPieceTypes, IMagic
     {
-        public static PieceType Type => PieceType.Bishop;
+        public static EPieceType Type => EPieceType.Bishop;
         public static int Index => 1;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BitBoard Get(BitBoard[] bb)
+        public static SBitBoard Get(SBitBoard[] bb)
         {
-            return bb[(int)PieceType.Bishop];
+            return bb[(int)EPieceType.Bishop];
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Rook : IPieceType, IPieceTypes, IMagic
+    public readonly struct SRook : IPieceType, IPieceTypes, IMagic
     {
-        public static PieceType Type => PieceType.Rook;
+        public static EPieceType Type => EPieceType.Rook;
         public static int Index => 0;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BitBoard Get(BitBoard[] bb)
+        public static SBitBoard Get(SBitBoard[] bb)
         {
-            return bb[(int)PieceType.Rook];
+            return bb[(int)EPieceType.Rook];
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Queen : IPieceTypes, IPieceType
+    public readonly struct SQueen : IPieceTypes, IPieceType
     {
-        public static PieceType Type => PieceType.Queen;
-        public static BitBoard Get(BitBoard[] bb)
+        public static EPieceType Type => EPieceType.Queen;
+        public static SBitBoard Get(SBitBoard[] bb)
         {
-            return bb[(int)PieceType.Queen];
+            return bb[(int)EPieceType.Queen];
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct King : IPieceType, IPieceTypes
+    public readonly struct SKing : IPieceType, IPieceTypes
     {
-        public static PieceType Type => PieceType.King;
-        public static BitBoard Get(BitBoard[] bb)
+        public static EPieceType Type => EPieceType.King;
+        public static SBitBoard Get(SBitBoard[] bb)
         {
-            return bb[(int)PieceType.King];
+            return bb[(int)EPieceType.King];
         }
     }
 }

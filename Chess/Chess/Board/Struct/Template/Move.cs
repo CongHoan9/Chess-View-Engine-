@@ -3,26 +3,26 @@ namespace Chess
 {
     public interface IMoveType
     {
-        static abstract MoveType Type { get; }
+        static abstract EMoveType Type { get; }
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Normal : IMoveType
     {
-        public static MoveType Type => MoveType.Normal;
+        public static EMoveType Type => EMoveType.Normal;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Promotion : IMoveType
     {
-        public static MoveType Type => MoveType.Promotion;
+        public static EMoveType Type => EMoveType.Promotion;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct EnPassant : IMoveType
     {
-        public static MoveType Type => MoveType.EnPassant;
+        public static EMoveType Type => EMoveType.EnPassant;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Castling : IMoveType
     {
-        public static MoveType Type => MoveType.Castling;
+        public static EMoveType Type => EMoveType.Castling;
     }
 }

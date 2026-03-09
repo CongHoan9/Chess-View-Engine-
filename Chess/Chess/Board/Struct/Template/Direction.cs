@@ -4,49 +4,49 @@ namespace Chess
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct North : IDirection
     {
-        public static int Offset => 8;
-        public static ulong Mask => ulong.MaxValue;
+        public static EDirection Offset => EDirection.North;
+        public static SBitBoard Mask => ulong.MaxValue;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct South : IDirection
     {
-        public static int Offset => -8;
-        public static ulong Mask => ulong.MaxValue;
+        public static EDirection Offset => EDirection.South;
+        public static SBitBoard Mask => ulong.MaxValue;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct East : IDirection
     {
-        public static int Offset => 1;
-        public static ulong Mask => BitBoards.NotFileHBB;
+        public static EDirection Offset => EDirection.East;
+        public static SBitBoard Mask => BitBoard.NotFileHBB;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct West : IDirection
     {
-        public static int Offset => -1;
-        public static ulong Mask => BitBoards.NotFileABB;
+        public static EDirection Offset => EDirection.West;
+        public static SBitBoard Mask => BitBoard.NotFileABB;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct NorthEast : IDirection
     {
-        public static int Offset => 9;
-        public static ulong Mask => BitBoards.NotFileHBB;
+        public static EDirection Offset => EDirection.NorthEast;
+        public static SBitBoard Mask => BitBoard.NotFileHBB;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct NorthWest : IDirection
     {
-        public static int Offset => 7;
-        public static ulong Mask => BitBoards.NotFileABB;
+        public static EDirection Offset => EDirection.NorthWest;
+        public static SBitBoard Mask => BitBoard.NotFileABB;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct SouthEast : IDirection
     {
-        public static int Offset => -7;
-        public static ulong Mask => BitBoards.NotFileHBB;
+        public static EDirection Offset => EDirection.SouthEast;
+        public static SBitBoard Mask => BitBoard.NotFileHBB;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct SouthWest : IDirection
     {
-        public static int Offset => -9;
-        public static ulong Mask => BitBoards.NotFileABB;
+        public static EDirection Offset => EDirection.SouthWest;
+        public static SBitBoard Mask => BitBoard.NotFileABB;
     }
 }

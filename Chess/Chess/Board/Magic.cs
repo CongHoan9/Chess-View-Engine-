@@ -10,7 +10,7 @@ namespace Chess
     public struct Magic
     {
         public ulong mask;
-        public BitBoard[] attacks;
+        public SBitBoard[] attacks;
         public ulong magic;
         public int Shift;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

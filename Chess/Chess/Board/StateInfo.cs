@@ -5,53 +5,52 @@ namespace Chess
     [StructLayout(LayoutKind.Sequential)]
     unsafe public struct StateInfo()
     {
-        public Key MaterialKey;
-        public Key PawnKey;
-        public Key MinorPieceKey;
+        public SKey MaterialKey;
+        public SKey PawnKey;
+        public SKey MinorPieceKey;
         public NonPawnKey NonPawnKey;
         public NonPawnMaterial NonPawnMaterial;
         public int CastlingRights;
         public int Rule50;
         public int PliesFromNull;
-        public Square EpSquare;
+        public ESquare EpSquare;
+        public SKey Key;
+        public SBitBoard CheckersBB;
         public StateInfo* Previous;
-
-        public Key Key;
-        public BitBoard CheckersBB;
         public BlockersForKing BlockersForKing;
         public Pinners Pinners;
         public CheckSquares CheckSquares;
-        public Piece CapturedPiece;
+        public EPiece CapturedPiece;
         public int Repetition;
     }
-    [InlineArray((int)Color.ColorNB)]
+    [InlineArray((int)EColor.ColorNB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct NonPawnKey
     {
-        private Key Raw;
+        private SKey Raw;
     }
-    [InlineArray((int)Color.ColorNB)]
+    [InlineArray((int)EColor.ColorNB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct NonPawnMaterial
     {
-        private Value Raw;
+        private SValue Raw;
     }
-    [InlineArray((int)Color.ColorNB)]
+    [InlineArray((int)EColor.ColorNB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct BlockersForKing
     {
-        private BitBoard Raw;
+        private SBitBoard Raw;
     }
-    [InlineArray((int)Color.ColorNB)]
+    [InlineArray((int)EColor.ColorNB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct Pinners
     {
-        private BitBoard Raw;
+        private SBitBoard Raw;
     }
-    [InlineArray((int)PieceType.PieceTypeNB)]
+    [InlineArray((int)EPieceType.PieceTypeNB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct CheckSquares
     {
-        private BitBoard Raw;
+        private SBitBoard Raw;
     }
 }

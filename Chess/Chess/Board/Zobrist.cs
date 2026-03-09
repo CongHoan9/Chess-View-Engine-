@@ -1,14 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Chess
+﻿namespace Chess
 {
     public static class Zobrist
     {
-        public static Key[][] Psq { get; } = [.. Enumerable.Range(0, (int)Piece.PieceNB).Select(_ => new Key[(int)Square.SquareNB])];
-        public static Key[] EnPassant { get; } = new Key[(int)File.FileNB];
-        public static Key[] Castling { get; } = new Key[(int)CastlingRights.CastlingRightNB];
-        public static Key Side, NoPawns;
+        public static SKey[][] Psq { get; } = [.. Enumerable.Range(0, (int)EPiece.PieceNB).Select(_ => new SKey[(int)ESquare.SquareNB])];
+        public static SKey[] EnPassant { get; } = new SKey[(int)EFile.FileNB];
+        public static SKey[] Castling { get; } = new SKey[(int)ECastlingRights.CastlingRightNB];
+        public static readonly SKey Side, NoPawns;
+        static Zobrist()
+        {
+            PRNG rng = new(1070372);
+            for (EPiece pc = 0; pc < EPiece.PieceNB; pc++)
+            {
+                for (ESquare sq = 0; sq < ESquare.SquareNB; sq++)
+                {
+                    Psq[(int)pc][(int)sq] = rng.Rand64();
+                }    
+            }
+            for (EFile f = 0; f < EFile.FileNB; f++)
+            {
+                EnPassant[(int)f] = rng.Rand64();
+            }
+            for (ECastlingRights c = 0; c < ECastlingRights.CastlingRightNB; c++)
+            {
+                Castling[(int)c] = rng.Rand64();
+            }
+            Side = rng.Rand64();
+            NoPawns = rng.Rand64();
+        }
     }
 }

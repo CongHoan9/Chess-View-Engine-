@@ -1,0 +1,10 @@
+Negamax
+Move Ordering
+Principal Variation Search
+Iterative Deepening
+Transposition Table
+Null Move Pruning
+Late Move Reduction
+Futility Pruning
+Aspiration Window
+Quiescence Search

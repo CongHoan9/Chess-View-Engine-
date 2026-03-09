@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-namespace Chess
+﻿namespace Chess
 {
-    public enum Color : int
+    public enum EColor : int
     {
         White,
         Black,
@@ -12,22 +9,20 @@ namespace Chess
     }
     public interface IColor
     {
-        static abstract Color Us { get; }
-        static abstract Color Them { get; }
-        static abstract BitBoard Rank2BB { get; }
-        static abstract BitBoard Rank3BB { get; }
-        static abstract BitBoard Rank4BB { get; }
-        static abstract BitBoard Rank5BB { get; }
-        static abstract BitBoard Rank6BB { get; }
-        static abstract BitBoard Rank7BB { get; }
-        static abstract Direction Up { get; }
-        static abstract Direction Left { get; }
-        static abstract Direction Right { get; }
-        static abstract Direction DoubleUp { get; }
-        static abstract CastlingRights CastlingRights { get; }
-        static abstract CastlingRights KingSide { get; }
-        static abstract CastlingRights QueenSide { get; }
-        static abstract Rank RelativeRank(Rank r);
-        static abstract Square RelativeSquare(Square s);
+        public static abstract EColor Us { get; }
+        public static abstract EColor Them { get; }
+        public static abstract EDirection Up { get; }
+        public static abstract SBitBoard Rank3BB { get; }
+        public static abstract SBitBoard Rank7BB { get; }
+        public static abstract EDirection UpLeft { get; }
+        public static abstract EDirection UpRight { get; }
+        public static abstract ECastlingRights KingSide { get; }
+        public static abstract ECastlingRights QueenSide { get; }
+        public static abstract ECastlingRights CastlingRights { get; }
+        public static abstract ECastlingRights[] AllCastlingRights { get; }
+        public static abstract SBitBoard PawnUp(SBitBoard bb);
+        public static abstract SBitBoard PawnUpRight(SBitBoard bb);
+        public static abstract SBitBoard PawnUpLeft(SBitBoard bb);
+        public static abstract SBitBoard PawnDoubleUp(SBitBoard bb);
     }
 }

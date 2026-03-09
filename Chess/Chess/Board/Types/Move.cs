@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-
-namespace Chess
+﻿namespace Chess
 {
-    public enum MoveType
+    public enum EMoveType
     {
         Normal = 0,
         Promotion = 1 << 14,

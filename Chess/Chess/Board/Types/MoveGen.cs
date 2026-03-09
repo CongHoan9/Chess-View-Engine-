@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Chess
 {
-    public enum GenType
+    public enum EGenType
     {
         Captures,
         Quiets,
@@ -14,6 +14,6 @@ namespace Chess
     }
     public interface IMoveGen
     {
-        static abstract GenType Type { get; }
+        static abstract EGenType Type { get; }
     }
 }

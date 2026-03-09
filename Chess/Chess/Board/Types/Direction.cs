@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Chess
+﻿namespace Chess
 {
     public interface IDirection
     {
-        static abstract int Offset { get; }
-        static abstract ulong Mask { get; }
+        static abstract EDirection Offset { get; }
+        static abstract SBitBoard Mask { get; }
     }
-    public enum Direction : int
+    public enum EDirection : int
     {
         North = 8,
         East = 1,

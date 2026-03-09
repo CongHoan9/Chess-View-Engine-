@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Chess
+﻿namespace Chess
 {
-    public enum CastlingRights : int
+    public enum ECastlingRights : int
     {
         NoCastling = 0,
         WhiteOO = 1 << 0,

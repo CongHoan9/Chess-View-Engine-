@@ -2,7 +2,7 @@
 {
     public interface IPawnOffset
     {
-        static abstract Direction Value { get; }
-        static abstract ulong Mask { get; }
+        public static abstract EDirection Offset { get; }
+        public static abstract SBitBoard Shift(SBitBoard bb);
     }
 }

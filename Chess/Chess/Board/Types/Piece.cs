@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Chess
+﻿namespace Chess
 {
     public interface IPieceType
     {
-        public static abstract PieceType Type { get; }
+        public static abstract EPieceType Type { get; }
     }
     public interface IPieceTypes
     {
-        public static abstract BitBoard Get(BitBoard[] bb);
+        public static abstract SBitBoard Get(SBitBoard[] bb);
     }
-    public enum PieceType : int
+    public enum EPieceType : int
     {
         NoPieceType,
         Pawn,
@@ -24,7 +20,7 @@ namespace Chess
         AllPieces,
         PieceTypeNB = 8
     }
-    public enum Piece : int
+    public enum EPiece : int
     {
         NoPiece,
         WPawn = 1, WKnight, WBishop, WRook, WQueen, WKing,

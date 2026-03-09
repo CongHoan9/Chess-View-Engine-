@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Value(int v)
+    public readonly struct SValue(int v)
     {
         public const int ValueZero = 0;
         public const int ValueDraw = 0;
@@ -25,23 +25,23 @@ namespace Chess
         public const int MidgameLimit = 15158;
         public const int EndgameLimit = 3915;
         public int Raw { get; } = v;
-        public static implicit operator int(Value v) => v.Raw;
-        public static implicit operator Value(int v) => new(v);
-        public static Value operator +(Value a, Value b) => a.Raw + b.Raw;
-        public static Value operator -(Value a, Value b) => a.Raw - b.Raw;
-        public static Value operator *(Value a, int b) => a.Raw * b;
-        public static Value operator /(Value a, int b) => a.Raw / b;
-        public static Value operator -(Value a) => -a.Raw;
-        public static bool operator ==(Value a, Value b) => a.Raw == b.Raw;
-        public static bool operator !=(Value a, Value b) => a.Raw != b.Raw;
-        public static bool operator >(Value a, Value b) => a.Raw > b.Raw;
-        public static bool operator <(Value a, Value b) => a.Raw < b.Raw;
-        public static bool operator >=(Value a, Value b) => a.Raw >= b.Raw;
-        public static bool operator <=(Value a, Value b) => a.Raw <= b.Raw;
+        public static implicit operator int(SValue v) => v.Raw;
+        public static implicit operator SValue(int v) => new(v);
+        public static SValue operator +(SValue a, SValue b) => a.Raw + b.Raw;
+        public static SValue operator -(SValue a, SValue b) => a.Raw - b.Raw;
+        public static SValue operator *(SValue a, int b) => a.Raw * b;
+        public static SValue operator /(SValue a, int b) => a.Raw / b;
+        public static SValue operator -(SValue a) => -a.Raw;
+        public static bool operator ==(SValue a, SValue b) => a.Raw == b.Raw;
+        public static bool operator !=(SValue a, SValue b) => a.Raw != b.Raw;
+        public static bool operator >(SValue a, SValue b) => a.Raw > b.Raw;
+        public static bool operator <(SValue a, SValue b) => a.Raw < b.Raw;
+        public static bool operator >=(SValue a, SValue b) => a.Raw >= b.Raw;
+        public static bool operator <=(SValue a, SValue b) => a.Raw <= b.Raw;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
-            return obj is Value value && Raw == value.Raw;
+            return obj is SValue value && Raw == value.Raw;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()

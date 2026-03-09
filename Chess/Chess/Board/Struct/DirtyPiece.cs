@@ -8,9 +8,9 @@ namespace Chess
     [StructLayout(LayoutKind.Sequential)]
     public struct DirtyPiece
     {
-        public Piece Pc;
-        public Square From, To;
-        public Square RemoveSq, AddSq;
-        public Piece RemovePc, AddPc;
+        public EPiece Pc;
+        public ESquare From, To;
+        public ESquare RemoveSq, AddSq;
+        public EPiece RemovePc, AddPc;
     }
 }

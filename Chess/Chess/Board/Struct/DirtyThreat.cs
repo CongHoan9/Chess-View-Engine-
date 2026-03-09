@@ -15,29 +15,29 @@ namespace Chess
         {
             data = raw;
         }
-        public DirtyThreat(Piece pc, Piece threatenedPc, Square pcSq, Square threatenedSq, bool add)
+        public DirtyThreat(EPiece pc, EPiece threatenedPc, ESquare pcSq, ESquare threatenedSq, bool add)
         {
             data = ((uint)(add ? 1 : 0) << AddOffset) | ((uint)pc << PcOffset) | ((uint)threatenedPc << ThreatenedPcOffset) | ((uint)threatenedSq << ThreatenedSqOffset) | ((uint)pcSq << PcSqOffset);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Piece Pc()
+        public EPiece Pc()
         {
-            return (Piece)((data >> PcOffset) & 0xF);
+            return (EPiece)((data >> PcOffset) & 0xF);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Piece ThreatenedPc()
+        public EPiece ThreatenedPc()
         {
-            return (Piece)((data >> ThreatenedPcOffset) & 0xF);
+            return (EPiece)((data >> ThreatenedPcOffset) & 0xF);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Square ThreatenedSq()
+        public ESquare ThreatenedSq()
         {
-            return (Square)((data >> ThreatenedSqOffset) & 0xFF);
+            return (ESquare)((data >> ThreatenedSqOffset) & 0xFF);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Square PcSq()
+        public ESquare PcSq()
         {
-            return (Square)((data >> PcSqOffset) & 0xFF);
+            return (ESquare)((data >> PcSqOffset) & 0xFF);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Add()
@@ -54,18 +54,18 @@ namespace Chess
     public struct DirtyThreats
     {
         public DirtyThreatList List;
-        public Color Us;
-        public Square PrevKsq;
-        public Square Ksq;
-        public BitBoard ThreatenedSqs;
-        public BitBoard ThreateningSqs;
+        public EColor Us;
+        public ESquare PrevKsq;
+        public ESquare Ksq;
+        public SBitBoard ThreatenedSqs;
+        public SBitBoard ThreateningSqs;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
             List.Clear();
-            Us = Color.White;
-            PrevKsq = Square.SquareNone;
-            Ksq = Square.SquareNone;
+            Us = EColor.White;
+            PrevKsq = ESquare.SquareNone;
+            Ksq = ESquare.SquareNone;
             ThreatenedSqs = 0;
             ThreateningSqs = 0;
         }
@@ -73,20 +73,20 @@ namespace Chess
     [StructLayout(LayoutKind.Sequential)]
     public struct DirtyThreatList
     {
-        private DirtyThreatValues values;
-        private int _count;
-        public readonly int Count => _count;
+        private DirtyThreatValues Raw;
+        private int count;
+        public readonly int Count => count;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(DirtyThreat t)
         {
-            values[_count++] = t;
+            Raw[count++] = t;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
-            _count = 0;
+            count = 0;
         }
-        public ref DirtyThreat this[int index] => ref MemoryMarshal.CreateSpan(ref values.Raw, 32)[index];
+        public ref DirtyThreat this[int index] => ref MemoryMarshal.CreateSpan(ref Raw.Raw, 32)[index];
     }
     [InlineArray(32)]
     public struct DirtyThreatValues

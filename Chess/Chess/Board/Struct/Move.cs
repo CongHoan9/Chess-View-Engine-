@@ -11,7 +11,6 @@ namespace Chess
     public readonly struct SMove
     {
         public ushort Raw { get; }
-        public static readonly SMove MoveNone = new(0);
         public static readonly SMove MoveNull = new(65);
         public static implicit operator ushort(SMove m) => m.Raw;
         public static implicit operator SMove(ushort m) => new(m);
@@ -24,6 +23,10 @@ namespace Chess
         public SMove(ESquare from, ESquare to)
         {
             Raw = (ushort)(((int)from << 6) | (int)to);
+        }
+        public static SMove None()
+        {
+            return new SMove(0);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public EMoveType TypeOf()
@@ -48,12 +51,12 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SMove Make<M>(ESquare from, ESquare to) where M : struct, IMoveType
         {
-            return (ushort)((int)from | ((int)to << 6) | (ushort)M.Type);
+            return (SMove)(((int)from << 6) | (int)to | (ushort)M.Type);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SMove Make<M, P>(ESquare from, ESquare to) where M : struct, IMoveType where P : struct, IPieceType
         {
-            return (ushort)((int)from | ((int)to << 6) | ((int)P.Type << 12) | (ushort)M.Type);
+            return (SMove)(((int)from << 6) | (int)to | (((int)P.Type - (int)EPieceType.Knight) << 12) | (ushort)M.Type);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)

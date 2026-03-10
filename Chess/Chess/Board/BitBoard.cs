@@ -1,9 +1,15 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using static Chess.Types;
 namespace Chess
 {
     public static class BitBoard
     {
+        private static readonly EPieceType[] Slider = [EPieceType.Bishop, EPieceType.Rook];
+        private static readonly int[] KnightSteps = [-17, -15, -10, -6, 6, 10, 15, 17];
+        private static readonly int[] KingSteps = [-9, -8, -7, -1, 1, 7, 8, 9];
+        private static readonly EDirection[] RookDirections = [EDirection.North, EDirection.South, EDirection.East, EDirection.West];
+        private static readonly EDirection[] BishopDirections = [EDirection.NorthEast, EDirection.SouthEast, EDirection.SouthWest, EDirection.NorthWest];
         public static readonly SBitBoard Board = 0xFFFFFFFFFFFFFFFFUL;
         public static readonly SBitBoard FileABB = 0x0101010101010101UL;
         public static readonly SBitBoard FileBBB = FileABB << 1;
@@ -24,33 +30,28 @@ namespace Chess
         public static readonly SBitBoard NotFileABB = ~FileABB;
         public static readonly SBitBoard NotFileHBB = ~FileHBB;
         public static readonly byte[] PopCnt16 = new byte[1 << 16];
-        public static readonly byte[][] SquareDistance = new byte[64][];
-        public static readonly SBitBoard[][] betweenBB = new SBitBoard[64][];
-        public static readonly SBitBoard[][] lineBB = new SBitBoard[64][];
-        public static readonly SBitBoard[][] RayPassBB = new SBitBoard[64][];
-        public static readonly Magic[][] Magics = new Magic[64][];
+        public static readonly byte[][] SquareDistance = [.. Enumerable.Range(0, (int)ESquare.SquareNB).Select(_ => new byte[(int)ESquare.SquareNB])];
+        public static readonly SBitBoard[][] betweenBB = [.. Enumerable.Range(0, (int)ESquare.SquareNB).Select(_ => new SBitBoard[(int)ESquare.SquareNB])];
+        public static readonly SBitBoard[][] lineBB = [.. Enumerable.Range(0, (int)ESquare.SquareNB).Select(_ => new SBitBoard[(int)ESquare.SquareNB])];
+        public static readonly SBitBoard[][] RayPassBB = [.. Enumerable.Range(0, (int)ESquare.SquareNB).Select(_ => new SBitBoard[(int)ESquare.SquareNB])];
+        public static readonly SMagic[][] Magics = [.. Enumerable.Range(0, (int)ESquare.SquareNB).Select(_ => new SMagic[2])];
         public static readonly SBitBoard[] RookTable = new SBitBoard[0x19000];
         public static readonly SBitBoard[] BishopTable = new SBitBoard[0x1480];
         public static readonly SBitBoard[][] pseudoAttacks = InitPseudoAttacks();
-        private static readonly EPieceType[] Slider = [EPieceType.Bishop, EPieceType.Rook];
         static BitBoard()
         {
             for (int i = 0; i < (1 << 16); ++i)
             {
                 PopCnt16[i] = (byte)BitOperations.PopCount((uint)i);
             }
-            for (int s1 = (int)ESquare.SQ_A1; s1 <= (int)ESquare.SQ_H8; ++s1)
+            for (ESquare s1 = ESquare.SQ_A1; s1 <= ESquare.SQ_H8; ++s1)
             {
-                SquareDistance[s1] = new byte[64];
-                betweenBB[s1] = new SBitBoard[64];
-                lineBB[s1] = new SBitBoard[64];
-                RayPassBB[s1] = new SBitBoard[64];
-                Magics[s1] = new Magic[2];
-                for (int s2 = (int)ESquare.SQ_A1; s2 <= (int)ESquare.SQ_H8; ++s2)
+                int index1 = (int)s1;
+                for (ESquare s2 = ESquare.SQ_A1; s2 <= ESquare.SQ_H8; ++s2)
                 {
-                    int fileDistance = Math.Abs(Types.FileOf((ESquare)s1) - Types.FileOf((ESquare)s2));
-                    int rankDistance = Math.Abs(Types.RankOf((ESquare)s1) - Types.RankOf((ESquare)s2));
-                    SquareDistance[s1][s2] = (byte)Math.Max(fileDistance, rankDistance);
+                    int fileDistance = Math.Abs(FileOf(s1) - FileOf(s2));
+                    int rankDistance = Math.Abs(RankOf(s1) - RankOf(s2));
+                    SquareDistance[index1][(int)s2] = (byte)Math.Max(fileDistance, rankDistance);
                 }
             }
             InitMagics(EPieceType.Rook, RookTable, Magics);
@@ -74,7 +75,8 @@ namespace Chess
                 }
             }
         }
-        private static void InitMagics(EPieceType pt, SBitBoard[] table, Magic[][] magics)
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        private static void InitMagics(EPieceType pt, SBitBoard[] table, SMagic[][] magics)
         {
             int[,] seeds = 
             {
@@ -88,7 +90,7 @@ namespace Chess
             for (ESquare s = ESquare.SQ_A1; s <= ESquare.SQ_H8; s++)
             {
                 SBitBoard edges = ((Rank1BB | Rank8BB) & ~RankBB(s)) | ((FileABB | FileHBB) & ~FileBB(s));
-                Magic m = magics[(int)s][(int)pt - (int)EPieceType.Bishop];
+                SMagic m = magics[(int)s][(int)pt - (int)EPieceType.Bishop];
                 m.mask = SlidingAttack(pt, s, 0) & ~edges;
                 m.Shift = 64 - BitOperations.PopCount(m.mask);
                 if (s == ESquare.SQ_A1)
@@ -109,12 +111,12 @@ namespace Chess
                     b = (b - m.mask) & m.mask;
                 } 
                 while (b != 0);
-                PRNG rng = new((ulong)seeds[1, (int)Types.RankOf(s)]);
+                PRNG rng = new((ulong)seeds[1, (int)RankOf(s)]);
                 for (int i = 0; i < size;)
                 {
                     do
                     {
-                        m.magic = rng.SparseRand();
+                        m.magic = rng.SparseRand<ulong>();
                     }
                     while (BitOperations.PopCount((m.magic * m.mask) >> 56) < 6);
                     cnt++;
@@ -135,10 +137,11 @@ namespace Chess
                 magics[(int)s][(int)pt - (int)EPieceType.Bishop] = m;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private static SBitBoard[][] InitPseudoAttacks()
         {
             int PieceTypeNB = (int)EPieceType.PieceTypeNB;
-            var attacks = new SBitBoard[PieceTypeNB][];
+            SBitBoard[][] attacks = [.. Enumerable.Range(0, PieceTypeNB).Select(_ => new SBitBoard[(int)ESquare.SquareNB])];
             for (ESquare s = 0; s < ESquare.SquareNB; s++)
             {
                 int index = (int)s;
@@ -156,11 +159,8 @@ namespace Chess
         private static SBitBoard SafeDestination(ESquare s, int step)
         {
             ESquare to = (ESquare)((int)s + step);
-            return Types.IsOk(to) && Math.Abs((int)Types.FileOf(s) - (int)Types.FileOf(to)) <= 2 ? SquareBB(to) : SquareBB(0);
-        }
-        private static readonly EDirection[] RookDirections = [EDirection.North, EDirection.South, EDirection.East, EDirection.West];
-        private static readonly EDirection[] BishopDirections = [EDirection.NorthEast, EDirection.SouthEast, EDirection.SouthWest, EDirection.NorthWest];
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            return IsOk(to) && Math.Abs((int)FileOf(s) - (int)FileOf(to)) <= 2 ? SquareBB(to) : SquareBB(0);
+        }[MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static SBitBoard SlidingAttack(EPieceType pt, ESquare sq, SBitBoard occupied)
         {
             SBitBoard attacks = 0;
@@ -178,8 +178,7 @@ namespace Chess
             }
             return attacks;
         }
-        private static readonly int[] KnightSteps = [-17, -15, -10, -6, 6, 10, 15, 17];
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private static SBitBoard KnightAttack(ESquare sq)
         {
             SBitBoard b = 0;
@@ -189,8 +188,7 @@ namespace Chess
             }
             return b;
         }
-        private static readonly int[] KingSteps = [-9, -8, -7, -1, 1, 7, 8, 9];
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private static SBitBoard KingAttack(ESquare sq)
         {
             SBitBoard b = 0;
@@ -240,7 +238,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SBitBoard AttacksBB(EPiece pc, ESquare s, SBitBoard occupied)
         {
-            return Types.TypeOf(pc) == EPieceType.Pawn ? pseudoAttacks[(int)Types.ColorOf(pc)][(int)s] : AttacksBB(Types.TypeOf(pc), s, occupied);
+            return TypeOf(pc) == EPieceType.Pawn ? pseudoAttacks[(int)ColorOf(pc)][(int)s] : AttacksBB(TypeOf(pc), s, occupied);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool MoreThanOne(SBitBoard b)
@@ -275,7 +273,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SBitBoard RankBB(ESquare s) 
         { 
-            return RankBB(Types.RankOf(s));
+            return RankBB(RankOf(s));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SBitBoard FileBB(EFile f) 
@@ -285,7 +283,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SBitBoard FileBB(ESquare s) 
         { 
-            return FileBB(Types.FileOf(s)); 
+            return FileBB(FileOf(s)); 
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SBitBoard Shift<O>(SBitBoard bb) where O : struct, IPawnOffset

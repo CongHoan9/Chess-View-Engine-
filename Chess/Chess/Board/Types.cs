@@ -28,6 +28,11 @@ namespace Chess
             VALUE_ZERO, PawnValue, KnightValue, BishopValue, RookValue, QueenValue, VALUE_ZERO, VALUE_ZERO,
             VALUE_ZERO, PawnValue, KnightValue, BishopValue, RookValue, QueenValue, VALUE_ZERO, VALUE_ZERO
         ];
+        public static readonly EPiece[] Pieces =
+        [
+            EPiece.WPawn, EPiece.WKnight, EPiece.WBishop, EPiece.WRook, EPiece.WQueen, EPiece.WKing,
+            EPiece.BPawn, EPiece.BKnight, EPiece.BBishop, EPiece.BRook, EPiece.BQueen, EPiece.BKing,
+        ];
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ESquare Rotate180(ESquare sq)
         {
@@ -51,7 +56,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SMove MakeMove(ESquare from, ESquare to)
         {
-            return (SMove)((int)from << 6 + (int)to);
+            return (SMove)(((int)from << 6) + (int)to);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SMove MakeMove<T>(ESquare from, ESquare to, EPieceType pt = EPieceType.Knight) where T : struct, IMoveType
@@ -64,9 +69,14 @@ namespace Chess
             return (EPiece)(((int)c << 3) + pt);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ESquare MakeSquare(EFile f, ERank r) 
+        { 
+            return (ESquare)(((int)r << 3) + f);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ESquare FromSq(SMove m)
         {
-            return (ESquare)(m.Raw >> 6 & 0x3F);
+            return (ESquare)((m.Raw >> 6) & 0x3F);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ESquare ToSq(SMove m)
@@ -117,6 +127,21 @@ namespace Chess
         public static ESquare RelativeSquare(EColor c, ESquare s) 
         { 
             return (ESquare)((int)s ^ ((int)c * 56));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ERank RelativeRank(EColor c, ERank r) 
+        { 
+            return (ERank)((int)r ^ ((int)c * 7));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int H1(SKey k) 
+        { 
+            return (int)(k & 0x1FFF);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int H2(SKey k) 
+        { 
+            return (int)((k >> 16) & 0x1FFF);
         }
     }
 }

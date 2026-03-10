@@ -5,7 +5,8 @@
         public static SKey[][] Psq { get; } = [.. Enumerable.Range(0, (int)EPiece.PieceNB).Select(_ => new SKey[(int)ESquare.SquareNB])];
         public static SKey[] EnPassant { get; } = new SKey[(int)EFile.FileNB];
         public static SKey[] Castling { get; } = new SKey[(int)ECastlingRights.CastlingRightNB];
-        public static readonly SKey Side, NoPawns;
+        public static SKey Side { get; set; }
+        public static SKey NoPawns { get; set; }
         static Zobrist()
         {
             PRNG rng = new(1070372);

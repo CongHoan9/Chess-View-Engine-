@@ -7,7 +7,7 @@ namespace Chess
         static abstract int Index { get; }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct Magic
+    public struct SMagic
     {
         public ulong mask;
         public SBitBoard[] attacks;

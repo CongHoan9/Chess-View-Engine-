@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using static Chess.BitBoard;
 namespace Chess
 {
     public static class MoveGen
@@ -8,7 +9,7 @@ namespace Chess
         {
             while (toBB != 0)
             {
-                ESquare to = BitBoard.PopLsb(ref toBB);
+                ESquare to = PopLsb(ref toBB);
                 ESquare from = to - (int)O.Offset;
                 *moveList++ = new SMove(from, to);
             }
@@ -19,12 +20,12 @@ namespace Chess
         {
             while (toBB != 0)
             {
-                *moveList++ = new SMove(from, BitBoard.PopLsb(ref toBB));
+                *moveList++ = new SMove(from, PopLsb(ref toBB));
             }    
             return moveList;
         }
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe private static SMove* MakePromotions<T, O, B>(SMove* moveList, ESquare to) where T : struct, IMoveGen where O : struct, IPawnOffset where B : struct, IBool
+        unsafe private static SMove* MakePromotions<T, O, B>(SMove* moveList, ESquare to) where T : struct, IGenType where O : struct, IPawnOffset where B : struct, IBool
         {
             ESquare from = to - (int)O.Offset;
             bool all = T.Type == EGenType.Evasions || T.Type == EGenType.NonEvasions;
@@ -42,7 +43,7 @@ namespace Chess
         }
         // generate_pawn_moves equivalent
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe private static SMove* GeneratePawnMoves<C, G>(Position pos, SMove* moveList, SBitBoard target) where C : struct, IColor where G : struct, IMoveGen
+        unsafe private static SMove* GeneratePawnMoves<C, G>(Position pos, SMove* moveList, SBitBoard target) where C : struct, IColor where G : struct, IGenType
         {
             SBitBoard emptySquares = ~pos.GetPieces();
             SBitBoard enemies = (G.Type == EGenType.Evasions) ? pos.Checkers() : pos.GetPieces(C.Them);
@@ -50,8 +51,8 @@ namespace Chess
             SBitBoard pawnsNotOn7 = pos.GetPieces<SPawn>(C.Us) & ~C.Rank7BB;
             if (G.Type != EGenType.Captures)
             {
-                SBitBoard b1 = BitBoard.Shift<SPawnUp<C>>(pawnsNotOn7) & emptySquares;
-                SBitBoard b2 = BitBoard.Shift<SPawnDoubleUp<C>>(b1 & C.Rank3BB) & emptySquares;
+                SBitBoard b1 = Shift<SPawnUp<C>>(pawnsNotOn7) & emptySquares;
+                SBitBoard b2 = Shift<SPawnDoubleUp<C>>(b1 & C.Rank3BB) & emptySquares;
                 if (G.Type == EGenType.Evasions)
                 {
                     b1 &= target;
@@ -62,30 +63,30 @@ namespace Chess
             }
             if (pawnsOn7 != 0)
             {
-                SBitBoard b1 = BitBoard.Shift<SPawnUpRight<C>>(pawnsOn7) & enemies;
-                SBitBoard b2 = BitBoard.Shift<SPawnUpLeft<C>>(pawnsOn7) & enemies;
-                SBitBoard b3 = BitBoard.Shift<SPawnUp<C>>(pawnsOn7) & emptySquares;
+                SBitBoard b1 = Shift<SPawnUpRight<C>>(pawnsOn7) & enemies;
+                SBitBoard b2 = Shift<SPawnUpLeft<C>>(pawnsOn7) & enemies;
+                SBitBoard b3 = Shift<SPawnUp<C>>(pawnsOn7) & emptySquares;
                 if (G.Type == EGenType.Evasions)
                 {
                     b3 &= target;
                 }
                 while (b1 != 0)
                 {
-                    moveList = MakePromotions<G, SPawnUpRight<C>, STrue>(moveList, BitBoard.PopLsb(ref b1));
+                    moveList = MakePromotions<G, SPawnUpRight<C>, STrue>(moveList, PopLsb(ref b1));
                 }    
                 while (b2 != 0)
                 {
-                    moveList = MakePromotions<G, SPawnUpLeft<C>, STrue>(moveList, BitBoard.PopLsb(ref b2));
+                    moveList = MakePromotions<G, SPawnUpLeft<C>, STrue>(moveList, PopLsb(ref b2));
                 }
                 while (b3 != 0)
                 {
-                    moveList = MakePromotions<G, SPawnUp<C>, SFalse>(moveList, BitBoard.PopLsb(ref b3));
+                    moveList = MakePromotions<G, SPawnUp<C>, SFalse>(moveList, PopLsb(ref b3));
                 }
             }
             if (G.Type == EGenType.Captures || G.Type == EGenType.Evasions || G.Type == EGenType.NonEvasions)
             {
-                SBitBoard b1 = BitBoard.Shift<SPawnUpRight<C>>(pawnsNotOn7) & enemies;
-                SBitBoard b2 = BitBoard.Shift<SPawnUpLeft<C>>(pawnsNotOn7) & enemies;
+                SBitBoard b1 = Shift<SPawnUpRight<C>>(pawnsNotOn7) & enemies;
+                SBitBoard b2 = Shift<SPawnUpLeft<C>>(pawnsNotOn7) & enemies;
                 moveList = SplatPawnMoves<SPawnUpRight<C>>(moveList, b1);
                 moveList = SplatPawnMoves<SPawnUpLeft<C>>(moveList, b2);
                 if (pos.EpSquare() != ESquare.SquareNone)
@@ -94,10 +95,10 @@ namespace Chess
                     {
                         return moveList;
                     }
-                    b1 = pawnsNotOn7 & BitBoard.AttacksBB<SPawn>(pos.EpSquare(), C.Them);
+                    b1 = pawnsNotOn7 & AttacksBB<SPawn>(pos.EpSquare(), C.Them);
                     while (b1 != 0)
                     {
-                        *moveList++ = SMove.Make<EnPassant>(BitBoard.PopLsb(ref b1), pos.EpSquare());
+                        *moveList++ = SMove.Make<EnPassant>(PopLsb(ref b1), pos.EpSquare());
                     }
                 }
             }
@@ -109,20 +110,20 @@ namespace Chess
             SBitBoard bb = pos.GetPieces<P>(C.Us);
             while (bb != 0)
             {
-                ESquare from = BitBoard.PopLsb(ref bb);
-                SBitBoard b = BitBoard.AttacksBB<P>(from, pos.GetPieces()) & target;
+                ESquare from = PopLsb(ref bb);
+                SBitBoard b = AttacksBB<P>(from, pos.GetPieces()) & target;
                 moveList = SplatMoves(moveList, from, b); 
             }
             return moveList;
         }
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public static SMove* GenerateAll<C, G>(Position pos, SMove* moveList) where C : struct, IColor where G : struct, IMoveGen
+        unsafe public static SMove* GenerateAll<C, G>(Position pos, SMove* moveList) where C : struct, IColor where G : struct, IGenType
         {
             ESquare ksq = pos.GetSquare<SKing>(C.Us);
             SBitBoard target = 0;
-            if (G.Type != EGenType.Evasions || !BitBoard.MoreThanOne(pos.Checkers()))
+            if (G.Type != EGenType.Evasions || !MoreThanOne(pos.Checkers()))
             {
-                target = G.Type == EGenType.Evasions ? BitBoard.BetweenBB(ksq, BitBoard.Lsb(pos.Checkers()))
+                target = G.Type == EGenType.Evasions ? BetweenBB(ksq, Lsb(pos.Checkers()))
                     : G.Type == EGenType.NonEvasions ? ~pos.GetPieces(C.Us)
                     : G.Type == EGenType.Captures    ? pos.GetPieces(C.Them)
                                                     : ~pos.GetPieces();
@@ -132,7 +133,7 @@ namespace Chess
                 moveList = GenerateMoves<C, SRook>(pos, moveList, target);
                 moveList = GenerateMoves<C, SQueen>(pos, moveList, target);
             }
-            SBitBoard b = BitBoard.AttacksBB<SKing>(ksq) & (G.Type == EGenType.Evasions ? ~pos.GetPieces(C.Us) : target);
+            SBitBoard b = AttacksBB<SKing>(ksq) & (G.Type == EGenType.Evasions ? ~pos.GetPieces(C.Us) : target);
             moveList = SplatMoves(moveList, ksq, b);
             if ((G.Type == EGenType.Quiets || G.Type == EGenType.NonEvasions) && pos.CanCastle(C.CastlingRights))
             {
@@ -147,7 +148,7 @@ namespace Chess
             return moveList;
         }
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public static SMove* Generate<G>(Position pos, SMove* moveList) where G : struct, IMoveGen
+        unsafe public static SMove* Generate<G>(Position pos, SMove* moveList) where G : struct, IGenType
         {
             return pos.SideToMove == EColor.White ? GenerateAll<SWhite, G>(pos, moveList) : GenerateAll<SBlack, G>(pos, moveList);
         }

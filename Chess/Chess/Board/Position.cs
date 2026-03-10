@@ -31,11 +31,6 @@ namespace Chess
         public static SKey[] Cuckoo { get; } = new SKey[8192];
         public static SMove[] CuckooMove { get; } = new SMove[8192];
         private readonly string PieceToChar = " PNBRQK  pnbrqk";
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void Swap<T>(ref T a, ref T b)
-        {
-            (b, a) = (a, b);
-        }
         public Position()
         {
             Console.WriteLine("Tạo pos");
@@ -72,15 +67,13 @@ namespace Chess
             {
                 for (ESquare s1 = ESquare.SQ_A1; s1 <= ESquare.SQ_H8; ++s1)
                 {
-                    Console.WriteLine($"S1 {s1}");
                     for (ESquare s2 = (s1 + 1); s2 <= ESquare.SQ_H8; ++s2)
                     {
-                        Console.WriteLine($"S2 {s2}");
-                        if ((TypeOf(pc) != EPieceType.Pawn) && (AttacksBB(TypeOf(pc), s1, 0) & s2) != 0)
+                        if ((TypeOf(pc) != EPieceType.Pawn) && (AttacksBB(TypeOf(pc), s1, 0) & s2) != 0)//
                         {
                             SMove move = new(s1, s2);
                             SKey key = Zobrist.Psq[(int)pc][(int)s1] ^ Zobrist.Psq[(int)pc][(int)s2] ^ Zobrist.Side;
-                            int i = H1(key); 
+                            int i = H1(key);
                             while (true)
                             {
                                 Swap(ref Cuckoo[i], ref key);
@@ -89,14 +82,19 @@ namespace Chess
                                 {
                                     break;
                                 }
-                                i = (i == H1(key)) ? H2(key) : H1(key); 
+                                i = (i == H1(key)) ? H2(key) : H1(key);
                             }
                             count++;
                         }
                     }
                 }
-                Console.WriteLine("Xong");
             }
+            Console.WriteLine("Tạo pos xong");
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void Swap<T>(ref T a, ref T b)
+        {
+            (b, a) = (a, b);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()

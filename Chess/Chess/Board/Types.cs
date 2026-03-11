@@ -1,28 +1,25 @@
-﻿using System;
-using System.Drawing.Imaging;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-#pragma warning disable IDE0130
+﻿using System.Runtime.CompilerServices;
 namespace Chess
 {
     public static class Types
     {
-        public static readonly SValue MAX_PLY = 246;
-        public static readonly SValue VALUE_ZERO = 0;
-        public static readonly SValue VALUE_DRAW = 0;
-        public static readonly SValue VALUE_NONE = 32002;
-        public static readonly SValue VALUE_INFINITE = 32001;
-        public static readonly SValue VALUE_MATE = 32000;
-        public static readonly SValue VALUE_MATE_IN_MAX_PLY = VALUE_MATE - MAX_PLY;
-        public static readonly SValue VALUE_MATED_IN_MAX_PLY = -VALUE_MATE_IN_MAX_PLY;
-        public static readonly SValue VALUE_TB = VALUE_MATE_IN_MAX_PLY - 1;
-        public static readonly SValue VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB - MAX_PLY;
-        public static readonly SValue VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
-        public static readonly SValue PawnValue = 208;
-        public static readonly SValue KnightValue = 781;
-        public static readonly SValue BishopValue = 825;
-        public static readonly SValue RookValue = 1276;
-        public static readonly SValue QueenValue = 2538;
+        public const int MAX_MOVES = 256;
+        public const int MAX_PLY = 246;
+        public const int VALUE_ZERO = 0;
+        public const int VALUE_DRAW = 0;
+        public const int VALUE_NONE = 32002;
+        public const int VALUE_INFINITE = 32001;
+        public const int VALUE_MATE = 32000;
+        public const int VALUE_MATE_IN_MAX_PLY = VALUE_MATE - MAX_PLY;
+        public const int VALUE_MATED_IN_MAX_PLY = -VALUE_MATE_IN_MAX_PLY;
+        public const int VALUE_TB = VALUE_MATE_IN_MAX_PLY - 1;
+        public const int VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB - MAX_PLY;
+        public const int VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
+        public const int PawnValue = 208;
+        public const int KnightValue = 781;
+        public const int BishopValue = 825;
+        public const int RookValue = 1276;
+        public const int QueenValue = 2538;
         public static readonly SValue[] PieceValue =
         [
             VALUE_ZERO, PawnValue, KnightValue, BishopValue, RookValue, QueenValue, VALUE_ZERO, VALUE_ZERO,

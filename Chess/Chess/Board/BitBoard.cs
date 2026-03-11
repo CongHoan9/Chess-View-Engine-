@@ -38,6 +38,9 @@ namespace Chess
         public static readonly SBitBoard[] RookTable = new SBitBoard[0x19000];
         public static readonly SBitBoard[] BishopTable = new SBitBoard[0x1480];
         public static readonly SBitBoard[][] pseudoAttacks = InitPseudoAttacks();
+        public static readonly SKey[] Cuckoo = new SKey[8192];
+        public static readonly SMove[] CuckooMove = new SMove[8192];
+        public static readonly string PieceToChar = " PNBRQK  pnbrqk";
         static BitBoard()
         {
             for (int i = 0; i < (1 << 16); ++i)
@@ -159,8 +162,9 @@ namespace Chess
         private static SBitBoard SafeDestination(ESquare s, int step)
         {
             ESquare to = (ESquare)((int)s + step);
-            return IsOk(to) && Math.Abs((int)FileOf(s) - (int)FileOf(to)) <= 2 ? SquareBB(to) : SquareBB(0);
-        }[MethodImpl(MethodImplOptions.AggressiveInlining)]
+            return IsOk(to) && Math.Abs((int)FileOf(s) - (int)FileOf(to)) <= 2 ? SquareBB(to) : 0;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static SBitBoard SlidingAttack(EPieceType pt, ESquare sq, SBitBoard occupied)
         {
             SBitBoard attacks = 0;

@@ -1,14 +1,5 @@
-﻿using Chess;
-using System.Collections;
-using System.IO;
-using System.IO.Pipelines;
-using System.Net.NetworkInformation;
+﻿using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media.Media3D;
-using WinRT;
 using static Chess.BitBoard;
 using static Chess.Types;
 namespace Chess
@@ -28,12 +19,8 @@ namespace Chess
         public int chess960;
         public DirtyPiece scratch_dp;
         public DirtyThreats scratch_dts;
-        public static SKey[] Cuckoo { get; } = new SKey[8192];
-        public static SMove[] CuckooMove { get; } = new SMove[8192];
-        private readonly string PieceToChar = " PNBRQK  pnbrqk";
         public Position()
         {
-            Console.WriteLine("Tạo pos");
             PRNG rng = new(1070372);
             foreach (EPiece pc in Pieces)
             {
@@ -69,7 +56,7 @@ namespace Chess
                 {
                     for (ESquare s2 = (s1 + 1); s2 <= ESquare.SQ_H8; ++s2)
                     {
-                        if ((TypeOf(pc) != EPieceType.Pawn) && (AttacksBB(TypeOf(pc), s1, 0) & s2) != 0)//
+                        if ((TypeOf(pc) != EPieceType.Pawn) && (AttacksBB(TypeOf(pc), s1, 0) & s2) != 0)
                         {
                             SMove move = new(s1, s2);
                             SKey key = Zobrist.Psq[(int)pc][(int)s1] ^ Zobrist.Psq[(int)pc][(int)s2] ^ Zobrist.Side;
@@ -89,7 +76,6 @@ namespace Chess
                     }
                 }
             }
-            Console.WriteLine("Tạo pos xong");
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Swap<T>(ref T a, ref T b)
@@ -116,7 +102,7 @@ namespace Chess
             Array.Clear(CuckooMove, 0, CuckooMove.Length);
         }
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public unsafe Position Set(string fenStr, bool isChess960, StateInfo* si)
+        unsafe public Position Set(string fenStr, bool isChess960, StateInfo* si)
         {
             char col, row, token;
             int idx;
@@ -212,7 +198,7 @@ namespace Chess
             return this;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe public Position Set(string code, EColor c, StateInfo* si)
+        unsafe public Position Set(string code, StateInfo* si)
         {
             return Set(code, false, si);
         }
@@ -375,9 +361,9 @@ namespace Chess
             {
                 to = RelativeSquare(us, to > from ? ESquare.SQ_G1 : ESquare.SQ_C1);
                 EDirection step = to > from ? EDirection.West : EDirection.East;
-                for (int s = (int)to; s != (int)from; s += (int)step)
+                for (ESquare s = to; s != from; s += (int)step)
                 {
-                    if (AttackersToExist((ESquare)s, pieces, them))
+                    if (AttackersToExist(s, pieces, them))
                     {
                         return false;
                     }    
@@ -752,6 +738,10 @@ namespace Chess
                     SBitBoard discovered = ray & (rAttacks | bAttacks) & occupiedNoK;
                     if (discovered != 0 && (RayPassBB[(int)sliderSq][(int)s] & noRaysContaining) != noRaysContaining)
                     {
+                        if ((int)Lsb(discovered) >= 64)
+                        {
+                            Console.WriteLine("Bug");
+                        }
                         ESquare threatenedSq = Lsb(discovered);
                         EPiece threatenedPc = PieceOn(threatenedSq);
                         AddDirtyThreat<SUnBool<P>>(dts, slider, threatenedPc, sliderSq, threatenedSq);

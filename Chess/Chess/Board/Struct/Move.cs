@@ -68,5 +68,29 @@ namespace Chess
         {
             return Raw.GetHashCode();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override string ToString()
+        {
+            int from = Raw & 0x3F;
+            int to = (Raw >> 6) & 0x3F;
+            int promo = (Raw >> 12) & 0x3;
+            Span<char> s = stackalloc char[5];
+            s[0] = (char)('a' + (from & 7));
+            s[1] = (char)('1' + (from >> 3));
+            s[2] = (char)('a' + (to & 7));
+            s[3] = (char)('1' + (to >> 3));
+            if (promo != 0)
+            {
+                s[4] = promo switch
+                {
+                    1 => 'n',
+                    2 => 'b',
+                    3 => 'r',
+                    _ => 'q'
+                };
+                return new string(s);
+            }
+            return new string(s[..4]);
+        }
     }
 }

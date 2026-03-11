@@ -88,7 +88,7 @@ namespace Chess
         }
         public ref DirtyThreat this[int index] => ref MemoryMarshal.CreateSpan(ref Raw.Raw, 32)[index];
     }
-    [InlineArray(32)]
+    [InlineArray(96)]
     public struct DirtyThreatValues
     {
         public DirtyThreat Raw;

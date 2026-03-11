@@ -1,70 +1,50 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Chess.Types;
+
 namespace Chess
 {
-    unsafe public struct MoveList<T> where T : struct, IGenType
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct MoveList<T> : IDisposable where T : struct, IGenType
     {
-        public const int MAX_MOVES = 256;
-        private MoveValues moveList;
-        private readonly SMove* last;
-        public static implicit operator MoveValues(MoveList<T> move) => move.moveList;
+        private SMove* begin;
+        private SMove* last;
         public MoveList(Position pos)
         {
-            fixed (SMove* ptr = &moveList[0])
+            begin = (SMove*)NativeMemory.Alloc(MAX_MOVES, (nuint)sizeof(SMove));
+            last = T.Type == EGenType.Legal ? MoveGen.GenerateLegal(pos, begin) : MoveGen.Generate<T>(pos, begin);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly SMove* Begin() => begin;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly SMove* End() => last;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly int Size() => (int)(last - begin);
+        public void Dispose()
+        {
+            if (begin != null)
             {
-                last = MoveGen.Generate<T>(pos, ptr);
+                NativeMemory.Free(begin);
+                begin = null;
+                last = null;
             }
         }
-        public readonly SMove* Begin()
-        {
-            fixed (SMove* ptr = &moveList[0])
-            {
-                return ptr;
-            }
-        }
-        public readonly SMove* End()
-        {
-            return last;
-        }
-        public readonly int Size()
-        {
-            fixed (SMove* ptr = &moveList[0])
-            {
-                return (int)(last - ptr);
-            }    
-        }
-        public readonly bool Contains(int move)
-        {
-            fixed (SMove* ptr = &moveList[0])
-            {
-                int count = (int)(last - ptr);
-                for (int i = 0; i < count; i++)
-                {
-                    if (ptr[i] == move)
-                    {
-                        return true;
-                    }
-                }    
-                return false;
-            }
-        }
-        public readonly Enumerator GetEnumerator()
-        {
+        public readonly Enumerator GetEnumerator() 
+        { 
             return new Enumerator(Begin(), End());
         }
     }
-    [InlineArray(256)]
-    public struct MoveValues
-    {
-        private SMove Raw;
-    }
-    unsafe public ref struct Enumerator(SMove* begin, SMove* end)
-    {
+    [StructLayout(LayoutKind.Sequential)] 
+    unsafe public ref struct Enumerator(SMove* begin, SMove* end) 
+    { 
         private SMove* cur = begin - 1;
         private readonly SMove* end = end;
         public bool MoveNext()
-        {
-            cur++;
+        { 
+            cur++; 
             return cur < end;
         }
         public SMove Current => *cur;

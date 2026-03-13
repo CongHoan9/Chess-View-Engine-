@@ -716,6 +716,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe public void Do_Move<C>(Move m, ref StateInfo newSt) where C : struct, IColor
         {
+            scratch_dp = default;
             Do_Move<C>(m, ref newSt, Gives_Check<C>(m), ref scratch_dp, ref scratch_dts);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

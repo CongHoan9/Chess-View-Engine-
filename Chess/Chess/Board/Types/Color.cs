@@ -1,28 +1,28 @@
 ﻿namespace Chess
 {
-    public enum EColor : int
-    {
-        White,
-        Black,
-        NoColor,
-        ColorNB = 2
-    }
     public interface IColor
     {
-        public static abstract EColor Us { get; }
-        public static abstract EColor Them { get; }
-        public static abstract EDirection Up { get; }
-        public static abstract SBitBoard Rank3BB { get; }
-        public static abstract SBitBoard Rank7BB { get; }
-        public static abstract EDirection UpLeft { get; }
-        public static abstract EDirection UpRight { get; }
-        public static abstract ECastlingRights KingSide { get; }
-        public static abstract ECastlingRights QueenSide { get; }
-        public static abstract ECastlingRights CastlingRights { get; }
-        public static abstract ECastlingRights[] AllCastlingRights { get; }
-        public static abstract SBitBoard PawnUp(SBitBoard bb);
-        public static abstract SBitBoard PawnUpRight(SBitBoard bb);
-        public static abstract SBitBoard PawnUpLeft(SBitBoard bb);
-        public static abstract SBitBoard PawnDoubleUp(SBitBoard bb);
+        public static abstract Color Us { get; }
+        public static abstract Color Them { get; }
+        public static abstract Direction Up { get; }
+        public static abstract Bitboard Rank3 { get; }
+        public static abstract Bitboard Rank7 { get; }
+        public static abstract Direction UpLeft { get; }
+        public static abstract Direction UpRight { get; }
+        public static abstract CastlingRights KingSide { get; }
+        public static abstract CastlingRights QueenSide { get; }
+        public static abstract CastlingRights CastlingRights { get; }
+        public static abstract CastlingRights[] AllCastlingRights { get; }
+        public static abstract Bitboard Pawn_Up(Bitboard bb);
+        public static abstract Bitboard Pawn_Up_Right(Bitboard bb);
+        public static abstract Bitboard Pawn_Up_Left(Bitboard bb);
+        public static abstract Bitboard Pawn_Double_Up(Bitboard bb);
+    }
+    public enum Color : int
+    {
+        WHITE,
+        BLACK,
+        NO_COLOR = -1,
+        COLOR_NB = 2,
     }
 }

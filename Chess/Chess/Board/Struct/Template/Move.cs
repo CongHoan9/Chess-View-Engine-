@@ -1,28 +1,25 @@
 ﻿using System.Runtime.InteropServices;
+using static Chess.Types;
 namespace Chess
 {
-    public interface IMoveType
-    {
-        static abstract EMoveType Type { get; }
-    }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Normal : IMoveType
     {
-        public static EMoveType Type => EMoveType.Normal;
+        public static MoveType Type => NORMAL;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Promotion : IMoveType
     {
-        public static EMoveType Type => EMoveType.Promotion;
+        public static MoveType Type => PROMOTION;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct EnPassant : IMoveType
     {
-        public static EMoveType Type => EMoveType.EnPassant;
+        public static MoveType Type => EN_PASSANT;
     }
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Castling : IMoveType
     {
-        public static EMoveType Type => EMoveType.Castling;
+        public static MoveType Type => CASTLING;
     }
 }

@@ -1,27 +1,29 @@
-﻿namespace Chess
+﻿using static Chess.Types;
+namespace Chess
 {
+    using Key = UInt64;
     public static class Zobrist
     {
-        public static SKey[][] Psq { get; } = [.. Enumerable.Range(0, (int)EPiece.PieceNB).Select(_ => new SKey[(int)ESquare.SquareNB])];
-        public static SKey[] EnPassant { get; } = new SKey[(int)EFile.FileNB];
-        public static SKey[] Castling { get; } = new SKey[(int)ECastlingRights.CastlingRightNB];
-        public static SKey Side { get; set; }
-        public static SKey NoPawns { get; set; }
+        public static Key[][] Psq { get; } = [.. Enumerable.Range(0, (int)PIECE_NB).Select(_ => new Key[(int)SQ_NB])];
+        public static Key[] EnPassant { get; } = new Key[(int)FILE_NB];
+        public static Key[] Castling { get; } = new Key[(int)CASTLING_RIGHR_NB];
+        public static Key Side { get; set; }
+        public static Key NoPawns { get; set; }
         static Zobrist()
         {
             PRNG rng = new(1070372);
-            for (EPiece pc = 0; pc < EPiece.PieceNB; pc++)
+            for (Piece pc = 0; pc < PIECE_NB; pc++)
             {
-                for (ESquare sq = 0; sq < ESquare.SquareNB; sq++)
+                for (Square sq = 0; sq < SQ_NB; sq++)
                 {
                     Psq[(int)pc][(int)sq] = rng.Rand64();
                 }    
             }
-            for (EFile f = 0; f < EFile.FileNB; f++)
+            for (File f = 0; f < FILE_NB; f++)
             {
                 EnPassant[(int)f] = rng.Rand64();
             }
-            for (ECastlingRights c = 0; c < ECastlingRights.CastlingRightNB; c++)
+            for (CastlingRights c = 0; c < CASTLING_RIGHR_NB; c++)
             {
                 Castling[(int)c] = rng.Rand64();
             }

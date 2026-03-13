@@ -1,10 +1,14 @@
 ﻿namespace Chess
 {
-    public enum EMoveType
+    public interface IMoveType
     {
-        Normal = 0,
-        Promotion = 1 << 14,
-        EnPassant = 2 << 14,
-        Castling = 3 << 14
+        static abstract MoveType Type { get; }
+    }
+    public enum MoveType
+    {
+        NORMAL = 0,
+        PROMOTION = 1 << 14,
+        EN_PASSANT = 2 << 14,
+        CASTLING = 3 << 14
     }
 }

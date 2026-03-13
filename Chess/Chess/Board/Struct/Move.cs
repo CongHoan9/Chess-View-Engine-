@@ -1,67 +1,69 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
+using static Chess.Types;
 
 namespace Chess
 {
-
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct SMove
+    public readonly struct Move : IEquatable<Move>
     {
         public ushort Raw { get; }
-        public static readonly SMove MoveNull = new(65);
-        public static implicit operator ushort(SMove m) => m.Raw;
-        public static implicit operator SMove(ushort m) => new(m);
-        public static bool operator ==(SMove a, SMove b) => a.Raw == b.Raw;
-        public static bool operator !=(SMove a, SMove b) => a.Raw != b.Raw;
-        public SMove(ushort m)
+        public static readonly Move MoveNull = new(65);
+        public static implicit operator ushort(Move m) => m.Raw;
+        public static implicit operator Move(ushort m) => new(m);
+        public static bool operator ==(Move a, Move b) => a.Raw == b.Raw;
+        public static bool operator !=(Move a, Move b) => a.Raw != b.Raw;
+        public Move(ushort m)
         {
             Raw = m;
         }
-        public SMove(ESquare from, ESquare to)
+        public Move(Square from, Square to)
         {
             Raw = (ushort)(((int)from << 6) | (int)to);
         }
-        public static SMove None()
+        public static Move None()
         {
-            return new SMove(0);
+            return new Move(0);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EMoveType TypeOf()
+        public MoveType Type_Of()
         {
-            return (EMoveType)(Raw & (3 << 14));
+            return (MoveType)(Raw & (3 << 14));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ESquare FromSq()
+        public Square From_Sq()
         {
-            return (ESquare)(Raw >> 6 & 0x3F);
+            return (Square)((Raw >> 6) & 0x3F);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ESquare ToSq()
+        public Square To_Sq()
         {
-            return (ESquare)(Raw & 0x3F);
+            return (Square)(Raw & 0x3F);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EPieceType PromotionType()
+        public PieceType Promotion_Type()
         {
-            return ((Raw >> 12) & 3) + EPieceType.Knight;
+            return (PieceType)((Raw >> 12) & 3 + (int)KNIGHT);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SMove Make<M>(ESquare from, ESquare to) where M : struct, IMoveType
+        public static Move Make_Move<M>(Square from, Square to) where M : struct, IMoveType
         {
-            return (SMove)(((int)from << 6) | (int)to | (ushort)M.Type);
+            return (Move)(((ushort)from << 6) | (ushort)to | (ushort)M.Type);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SMove Make<M, P>(ESquare from, ESquare to) where M : struct, IMoveType where P : struct, IPieceType
+        public static Move Make_Move<M, P>(Square from, Square to) where M : struct, IMoveType where P : struct, IPieceType
         {
-            return (SMove)(((int)from << 6) | (int)to | (((int)P.Type - (int)EPieceType.Knight) << 12) | (ushort)M.Type);
+            return (Move)(((ushort)from << 6) | (ushort)to | ((P.Type - KNIGHT) << 12) | (ushort)M.Type);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(Move m)
+        {
+            return Raw == m.Raw;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
-            return obj is SMove move && Raw == move.Raw;
+            return obj is Move m && Equals(m);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
@@ -71,8 +73,8 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
-            int from = Raw & 0x3F;
-            int to = (Raw >> 6) & 0x3F;
+            int to = Raw & 0x3F;
+            int from = (Raw >> 6) & 0x3F;
             int promo = (Raw >> 12) & 0x3;
             Span<char> s = stackalloc char[5];
             s[0] = (char)('a' + (from & 7));

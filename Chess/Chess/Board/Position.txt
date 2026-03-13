@@ -1,0 +1,163 @@
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+unsafe public void DoMove(SMove m, ref StateInfo newSt, bool givesCheck, ref DirtyPiece dp, ref DirtyThreats dts)
+{
+    fixed (DirtyThreats* d = &dts)
+    fixed (DirtyPiece* p = &dp)
+    fixed (StateInfo* s = &newSt)
+    {
+        SKey k = st->Key ^ Zobrist.Side;
+        newSt.Previous = st;
+        Unsafe.CopyBlock(s, st, (uint)Unsafe.ByteOffset(ref Unsafe.As<StateInfo, byte>(ref *st), ref Unsafe.As<SKey, byte>(ref st->Key)));
+        st = s;
+        ++gamePly;
+        ++st->Rule50;
+        ++st->PliesFromNull;
+        EColor us = SideToMove;
+        int ius = us;
+        EColor them = us == WHITE ? BLACK : WHITE;
+        int ithem = them;
+        ESquare from = FromSq(m);
+        int from = from;
+        ESquare to = ToSq(m);
+        int to = to;
+        EPiece pc = PieceOn(from);
+        int pc = pc;
+        EPiece captured = TypeOf(m) == ENPASSANT ? MakePiece(them, PAWN) : PieceOn(to);
+        int captured = captured;
+        dp.Pc = pc;
+        dp.From = from;
+        dp.To = to;
+        dp.AddSq = SquareNone;
+        dts.Us = us;
+        dts.PrevKsq = GetSquare<SKing>(us);
+        dts.ThreatenedSqs = dts.ThreateningSqs = 0;
+        if (TypeOf(m) == CASTLING)
+        {
+            ESquare rfrom = SquareNone, rto = SquareNone;
+            DoCastling<STrue>(us, from, ref to, ref rfrom, ref rto, d, p);
+            k ^= Zobrist.Psq[captured][rfrom] ^ Zobrist.Psq[captured][rto];
+            st->NonPawnKey[us] ^= Zobrist.Psq[captured][rfrom] ^ Zobrist.Psq[captured][rto];
+            captured = EPiece.NoPiece;
+        }
+        else if (captured != 0)
+        {
+            ESquare capsq = to;
+            if (TypeOf(captured) == PAWN)
+            {
+                if (TypeOf(m) == ENPASSANT)
+                {
+                    capsq -= PawnPush(us);
+                    RemovePiece(capsq, d);
+                }
+                st->PawnKey ^= Zobrist.Psq[captured][capsq];
+            }
+            else
+            {
+                st->NonPawnMaterial[them] -= PieceValue[captured];
+                st->NonPawnKey[them] ^= Zobrist.Psq[captured][capsq];
+                if (TypeOf(captured) <= EPieceType.Bishop)
+                {
+                    st->MinorPieceKey ^= Zobrist.Psq[captured][capsq];
+                }
+            }
+            dp.RemovePc = captured;
+            dp.RemoveSq = capsq;
+            k ^= Zobrist.Psq[captured][capsq];
+            st->MaterialKey ^= Zobrist.Psq[captured][8 + PieceCount[captured] - ((TypeOf(m) != ENPASSANT) ? 1 : 0)];
+            st->Rule50 = 0;
+        }
+        else
+        {
+            dp.RemoveSq = SquareNone;
+        }
+        k ^= Zobrist.Psq[pc][from] ^ Zobrist.Psq[pc][to];
+        if (st->EpSquare != SquareNone)
+        {
+            k ^= Zobrist.EnPassant[FileOf(st->EpSquare)];
+            st->EpSquare = SquareNone;
+        }
+        k ^= Zobrist.Castling[st->CastlingRights];
+        st->CastlingRights &= ~(CastlingRightsMask[from] | CastlingRightsMask[to]);
+        k ^= Zobrist.Castling[st->CastlingRights];
+        if (TypeOf(m) != CASTLING)
+        {
+            if (captured != 0 && TypeOf(m) != ENPASSANT)
+            {
+                RemovePiece(from, d);
+                SwapPiece(to, pc, d);
+            }
+            else
+            {
+                MovePiece(from, to, d);
+            }
+        }
+        if (TypeOf(pc) == PAWN)
+        {
+            if ((to ^ from) == 16)
+            {
+                ESquare epSquare = to - PawnPush(us);
+                SBitBoard pawns = AttacksBB<SPawn>(epSquare, us) & GetPieces<SPawn>(them);
+                if (pawns != 0)
+                {
+                    ESquare ksq = GetSquare<SKing>(them);
+                    SBitBoard notBlockers = ~st->BlockersForKing[them];
+                    bool noDiscovery = (notBlockers % from) || FileOf(from) == FileOf(ksq);
+                    if (noDiscovery && (pawns & (notBlockers | LineBB(epSquare, ksq))) != 0)
+                    {
+                        st->EpSquare = epSquare;
+                        k ^= Zobrist.EnPassant[FileOf(epSquare)];
+                    }
+                }
+            }
+            else if (TypeOf(m) == EMoveType.Promotion)
+            {
+                EPiece promotion = MakePiece(us, PromotionType(m));
+                EPieceType promotionType = TypeOf(promotion);
+                SwapPiece(to, promotion, d);
+                dp.AddPc = promotion;
+                dp.AddSq = to;
+                dp.To = SquareNone;
+                k ^= Zobrist.Psq[promotion][to];
+                st->MaterialKey ^= Zobrist.Psq[promotion][8 + PieceCount[promotion] - 1] ^ Zobrist.Psq[pc][8 + PieceCount[pc]];
+                st->NonPawnKey[us] ^= Zobrist.Psq[promotion][to];
+                if (promotionType <= EPieceType.Bishop)
+                {
+                    st->MinorPieceKey ^= Zobrist.Psq[promotion][to];
+                }
+                st->NonPawnMaterial[us] += PieceValue[promotion];
+            }
+            st->PawnKey ^= Zobrist.Psq[pc][from] ^ Zobrist.Psq[pc][to];
+            st->Rule50 = 0;
+        }
+        else
+        {
+            st->NonPawnKey[us] ^= Zobrist.Psq[pc][from] ^ Zobrist.Psq[pc][to];
+            if (TypeOf(pc) <= EPieceType.Bishop)
+            {
+                st->MinorPieceKey ^= Zobrist.Psq[pc][from] ^ Zobrist.Psq[pc][to];
+            }
+        }
+        st->Key = k;
+        st->CapturedPiece = captured;
+        st->CheckersBB = givesCheck ? AttackersTo(GetSquare<SKing>(them)) & GetPieces(us) : 0;
+        SideToMove = SideToMove == WHITE ? BLACK : WHITE;
+        SetCheckInfo(st);
+        st->Repetition = 0;
+        int end = Math.Min(st->Rule50, st->PliesFromNull);
+        if (end >= 4)
+        {
+            StateInfo* stp = st;
+            stp = stp->Previous; stp = stp->Previous;
+            for (int i = 4; i <= end; i += 2)
+            {
+                stp = stp->Previous; stp = stp->Previous;
+                if (stp->Key == st->Key)
+                {
+                    st->Repetition = stp->Repetition != 0 ? -i : i;
+                    break;
+                }
+            }
+        }
+        dts.Ksq = GetSquare<SKing>(us);
+    }
+}

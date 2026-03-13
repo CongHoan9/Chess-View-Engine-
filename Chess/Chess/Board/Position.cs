@@ -1,71 +1,95 @@
 ﻿using System.IO;
+using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
-using static Chess.BitBoard;
+using System.Text;
+using static Chess.Bitboards;
+using static Chess.FuncBit;
 using static Chess.Types;
 namespace Chess
 {
+    using Key = UInt64;
     unsafe public partial class Position
     {
-        public EPiece[] Board = new EPiece[(int)ESquare.SquareNB];
-        public SBitBoard[] ByTypeBB = new SBitBoard[(int)EPieceType.PieceTypeNB];
-        public SBitBoard[] ByColorBB = new SBitBoard[(int)EColor.ColorNB];
-        public int[] PieceCount = new int[(int)EPiece.PieceNB];
-        public int[] CastlingRightsMask = new int[(int)ESquare.SquareNB];
-        public ESquare[] castlingRookSquare = new ESquare[(int)ECastlingRights.CastlingRightNB];
-        public SBitBoard[] CastlingPath = new SBitBoard[(int)ECastlingRights.CastlingRightNB];
+        public Piece[] Board = new Piece[(int)SQ_NB];
+        public Bitboard[] ByTypeBB = new Bitboard[(int)SQ_NB];
+        public Bitboard[] ByColorBB = new Bitboard[(int)COLOR_NB];
+        public int[] PieceCount = new int[(int)PIECE_NB];
+        public int[] CastlingRightsMask = new int[(int)SQ_NB];
+        public Square[] CastlingRookSquare = new Square[(int)CASTLING_RIGHR_NB];
+        public Bitboard[] CastlingPath = new Bitboard[(int)CASTLING_RIGHR_NB];
         public StateInfo* st;
         public int gamePly;
-        public EColor SideToMove;
         public int chess960;
         public DirtyPiece scratch_dp;
         public DirtyThreats scratch_dts;
+        public static readonly Key[] Cuckoo = new Key[8192];
+        public static readonly Move[] CuckooMove = new Move[8192];
+        public const string PieceToChar = " PNBRQK  pnbrqk";
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clear()
+        {
+            Array.Clear(Board, 0, Board.Length);
+            Array.Clear(ByTypeBB, 0, ByTypeBB.Length);
+            Array.Clear(ByColorBB, 0, ByColorBB.Length);
+            Array.Clear(PieceCount, 0, PieceCount.Length);
+            Array.Clear(CastlingRightsMask, 0, CastlingRightsMask.Length);
+            Array.Clear(CastlingRookSquare, 0, CastlingRookSquare.Length);
+            Array.Clear(CastlingPath, 0, CastlingPath.Length);
+            st = null;
+            gamePly = 0;
+            chess960 = 0;
+            scratch_dp = default;
+            scratch_dts = default;
+            Array.Clear(Cuckoo, 0, Cuckoo.Length);
+            Array.Clear(CuckooMove, 0, CuckooMove.Length);
+        }
         public Position()
         {
             PRNG rng = new(1070372);
-            foreach (EPiece pc in Pieces)
+            foreach (Piece pc in Pieces)
             {
-                for (ESquare s = ESquare.SQ_A1; s <= ESquare.SQ_H8; ++s)
+                for (Square s = SQ_A1; s <= SQ_H8; ++s)
                 {
-                    Zobrist.Psq[(int)pc][(int)s] = rng.Rand<SKey>();
+                    Zobrist.Psq[(int)pc][(int)s] = rng.Rand<Key>();
                 }    
             }
             for (int i = 0; i < 8; i++)
             {
-                Zobrist.Psq[(int)EPiece.WPawn][(int)ESquare.SQ_A8 + i] = 0;
+                Zobrist.Psq[(int)W_PAWN][(int)SQ_A8 + i] = 0;
             }
             for (int i = 0; i < 8; i++)
             {
-                Zobrist.Psq[(int)EPiece.BPawn][i] = 0;
+                Zobrist.Psq[(int)B_PAWN][i] = 0;
             }
-            for (EFile f = EFile.FileA; f <= EFile.FileH; ++f)
+            for (File f = FILE_A; f <= FILE_H; ++f)
             {
-                Zobrist.EnPassant[(int)f] = rng.Rand<SKey>();
+                Zobrist.EnPassant[(int)f] = rng.Rand<Key>();
             }
-            for (ECastlingRights cr = ECastlingRights.NoCastling; cr <= ECastlingRights.AnyCastling; ++cr)
+            for (CastlingRights cr = NO_CASTLING; cr <= ANY_CASTLING; ++cr)
             {
-                Zobrist.Castling[(int)cr] = rng.Rand<SKey>();
-            }    
-            Zobrist.Side = rng.Rand<SKey>();
-            Zobrist.NoPawns = rng.Rand<SKey>();
-            Array.Fill<SKey>(Cuckoo, 0);
-            Array.Fill<SMove>(CuckooMove, 0);
+                Zobrist.Castling[(int)cr] = rng.Rand<Key>();
+            }
+            Zobrist.Side = rng.Rand<Key>();
+            Zobrist.NoPawns = rng.Rand<Key>();
+            Array.Fill<Key>(Cuckoo, 0);
+            Array.Fill<Move>(CuckooMove, 0);
             int count = 0;
-            foreach (EPiece pc in Pieces)
+            foreach (Piece pc in Pieces)
             {
-                for (ESquare s1 = ESquare.SQ_A1; s1 <= ESquare.SQ_H8; ++s1)
+                for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
                 {
-                    for (ESquare s2 = (s1 + 1); s2 <= ESquare.SQ_H8; ++s2)
+                    for (Square s2 = (s1 + 1); s2 <= SQ_H8; ++s2)
                     {
-                        if ((TypeOf(pc) != EPieceType.Pawn) && (AttacksBB(TypeOf(pc), s1, 0) & s2) != 0)
+                        if ((Type_Of(pc) != PAWN) && (Attacks_BB(pc, s1, 0) & s2) != 0)
                         {
-                            SMove move = new(s1, s2);
-                            SKey key = Zobrist.Psq[(int)pc][(int)s1] ^ Zobrist.Psq[(int)pc][(int)s2] ^ Zobrist.Side;
+                            Move move = new(s1, s2);
+                            Key key = Zobrist.Psq[(int)pc][(int)s1] ^ Zobrist.Psq[(int)pc][(int)s2] ^ Zobrist.Side;
                             int i = H1(key);
                             while (true)
                             {
                                 Swap(ref Cuckoo[i], ref key);
                                 Swap(ref CuckooMove[i], ref move);
-                                if (move == SMove.None())
+                                if (move == Move.None())
                                 {
                                     break;
                                 }
@@ -83,30 +107,11 @@ namespace Chess
             (b, a) = (a, b);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Clear()
-        {
-            Array.Clear(Board, 0, Board.Length);
-            Array.Clear(ByTypeBB, 0, ByTypeBB.Length);
-            Array.Clear(ByColorBB, 0, ByColorBB.Length);
-            Array.Clear(PieceCount, 0, PieceCount.Length);
-            Array.Clear(CastlingRightsMask, 0, CastlingRightsMask.Length);
-            Array.Clear(castlingRookSquare, 0, castlingRookSquare.Length);
-            Array.Clear(CastlingPath, 0, CastlingPath.Length);
-            st = null;
-            gamePly = 0;
-            SideToMove = default;
-            chess960 = 0;
-            scratch_dp = default;
-            scratch_dts = default;
-            Array.Clear(Cuckoo, 0, Cuckoo.Length);
-            Array.Clear(CuckooMove, 0, CuckooMove.Length);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         unsafe public Position Set(string fenStr, bool isChess960, StateInfo* si)
         {
             char col, row, token;
             int idx;
-            ESquare sq = ESquare.SQ_A8;
+            Square sq = SQ_A8;
             var ss = new StringReader(fenStr);
             Clear();
             Unsafe.InitBlock(ref Unsafe.As<StateInfo, byte>(ref *si), 0, (uint)Unsafe.SizeOf<StateInfo>());
@@ -121,21 +126,21 @@ namespace Chess
                 }   
                 if (char.IsDigit(token))
                 {
-                    sq += (token - '0') * (int)EDirection.East;
+                    sq += (token - '0') * (int)EAST;
                 }    
                 else if (token == '/')
                 {
-                    sq += 2 * (int)EDirection.South;
+                    sq += 2 * (int)SOUTH;
                 }   
                 else if ((idx = PieceToChar.IndexOf(token)) != -1)
                 {
-                    PutPiece((EPiece)idx, sq, null);
-                    sq++;
+                    Put_Piece((Piece)idx, sq);
+                    ++sq;
                 }
             }
             token = (char)ss.Read();
-            SideToMove = token == 'w' ? EColor.White : EColor.Black;
-            EColor them = SideToMove == EColor.White ? EColor.Black : EColor.White;
+            Color us = token == 'w' ? WHITE : BLACK;
+            Color them = us == WHITE ? BLACK : WHITE;
             ss.Read(); 
             while ((c = ss.Read()) != -1)
             {
@@ -144,173 +149,241 @@ namespace Chess
                 {
                     break;
                 }    
-                ESquare rsq;
-                EColor cside = char.IsLower(token) ? EColor.Black : EColor.White;
-                EPiece rook = MakePiece(cside, EPieceType.Rook);
+                Square rsq;
+                Color cside = char.IsLower(token) ? BLACK : WHITE;
+                Piece rook = Make_Piece(cside, ROOK);
                 token = char.ToUpper(token);
                 if (token == 'K')
                 {
-                    for (rsq = RelativeSquare(cside, ESquare.SQ_H1); PieceOn(rsq) != rook; rsq--)
+                    for (rsq = Relativ_Square(cside, SQ_H1); Piece_On_Square(rsq) != rook; rsq--)
                     { }
                 }
                 else if (token == 'Q')
                 {
-                    for (rsq = RelativeSquare(cside, ESquare.SQ_A1); PieceOn(rsq) != rook; rsq++)
+                    for (rsq = Relativ_Square(cside, SQ_A1); Piece_On_Square(rsq) != rook; rsq++)
                     { }
                 }
                 else if (token >= 'A' && token <= 'H')
                 {
-                    rsq = MakeSquare((EFile)(token - 'A'), RelativeRank(cside, ERank.Rank1));
+                    rsq = Make_Square((File)(token - 'A'), Relativ_Rank(cside, RANK_1));
                 }
                 else
                 {
                     continue;
                 }
-                SetCastlingRight(cside, rsq);
+                Set_Castling_Right(cside, rsq);
             }
             bool enpassant = false, legalEP = false;
             col = (char)ss.Read();
             row = (char)ss.Read();
-            if (col >= 'a' && col <= 'h' && row == (SideToMove == EColor.White ? '6' : '3'))
+            if (col >= 'a' && col <= 'h' && row == (us == WHITE ? '6' : '3'))
             {
-                st->EpSquare = MakeSquare((EFile)(col - 'a'), (ERank)(row - '1'));
-                SBitBoard pawns = AttacksBB<SPawn>(st->EpSquare, them) & GetPieces<SPawn>(SideToMove);
-                SBitBoard target = GetPieces<SPawn>(them) & (st->EpSquare + (int)PawnPush(them));
-                SBitBoard occ = GetPieces() ^ target ^ st->EpSquare;
-                enpassant = pawns != 0 && target != 0 && !((GetPieces() & (st->EpSquare | (st->EpSquare + (int)PawnPush(SideToMove)))) != 0);
+                st->EpSquare = Make_Square((File)col - 'a', (Rank)row - '1');
+                Bitboard pawns = Attacks_BB_Square<Pawn>(st->EpSquare, them) & Get_Pieces_Of_Color<Pawn>(us);
+                Bitboard target = Get_Pieces_Of_Color<Pawn>(them) & (st->EpSquare + (int)Pawn_Push(them));
+                Bitboard occ = Get_Pieces() ^ target ^ Square_BB(st->EpSquare);
+                enpassant = pawns != 0 && (Get_Pieces() & (st->EpSquare | (st->EpSquare + (int)(Pawn_Push(them))))) == 0;
                 while (pawns != 0)
                 {
-                    ESquare p = PopLsb(ref pawns);
-                    legalEP |= !((AttackersTo(GetSquare<SKing>(SideToMove), occ ^ p) & GetPieces(them) & ~target) !=0);
+                    legalEP |= (Attackers_To(Get_Square_Of_Color<King>(them), occ ^ Pop_Lsb(ref pawns)) & Get_Pieces_Of_Color(them) & ~target) == 0;
                 }
             }
             if (!enpassant || !legalEP)
             {
-                st->EpSquare = ESquare.SquareNone;
+                st->EpSquare = SQ_NONE;
             }    
             string rest = ss.ReadToEnd();
             var parts = rest.Trim().Split(' ');
             st->Rule50 = int.Parse(parts[0]);
             gamePly = int.Parse(parts[1]);
-            gamePly = Math.Max(2 * (gamePly - 1), 0) + (SideToMove == EColor.Black ? 1 : 0);
+            gamePly = Math.Max(2 * (gamePly - 1), 0) + (us == BLACK ? 1 : 0);
             chess960 = isChess960 ? 1 : 0;
-            SetState();
+            Set_State(us);
+            Console.WriteLine(Show(us));
             return this;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe public Position Set(string code, StateInfo* si)
+        private bool Empty(Square s)
         {
-            return Set(code, false, si);
+            return Piece_On_Square(s) == NO_PIECE; 
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetCastlingRight(EColor c, ESquare rfrom)
+        private string Fen(Color c)
         {
-            ESquare kfrom = GetSquare<SKing>(c);
-            var QueenSide = c == EColor.White ? SWhite.QueenSide : SBlack.QueenSide;
-            var KingSide = c == EColor.White ? SWhite.KingSide : SBlack.KingSide;
-            ECastlingRights cr = kfrom < rfrom ? KingSide : QueenSide;
+            int emptyCnt;
+            StringBuilder sb = new();
+            for (Rank r = RANK_8; ; r--)
+            {
+                for (File f = FILE_A; f <= FILE_H; f++)
+                {
+                    emptyCnt = 0;
+                    while (f <= FILE_H && Empty(Make_Square(f, r)))
+                    {
+                        emptyCnt++;
+                        f++;
+                    }
+                    if (emptyCnt != 0)
+                    {
+                        sb.Append(emptyCnt); 
+                    }
+                    if (f <= FILE_H)
+                    {
+                        sb.Append(PieceToChar[(int)Piece_On_Square(Make_Square(f, r))]);
+                    }
+                }
+                if (r == RANK_1)
+                {
+                    break;
+                }
+                sb.Append('/');
+            }
+            sb.Append(c == WHITE ? " w " : " b ");
+            if (Can_Castle(WHITE_OO))
+            {
+                sb.Append(chess960 != 0 ? (char)('A' + File_Of(Castling_Rook_Square(WHITE_OO))) : 'K');
+            }
+            if (Can_Castle(WHITE_OOO))
+            { 
+                sb.Append(chess960 != 0 ? (char)('A' + File_Of(Castling_Rook_Square(WHITE_OOO))) : 'Q');
+            }
+            if (Can_Castle(BLACK_OO))
+            { 
+                sb.Append(chess960 != 0 ? (char)('a' + File_Of(Castling_Rook_Square(BLACK_OO))) : 'k');
+            }
+            if (Can_Castle(BLACK_OOO))
+            {
+                sb.Append(chess960 != 0 ? (char)('a' + File_Of(Castling_Rook_Square(BLACK_OOO))) : 'q');
+            }
+            if (!Can_Castle(ANY_CASTLING))
+            {
+                sb.Append('-');
+            }
+            if (Ep_Square() == SQ_NONE)
+            {
+                sb.Append(" - ");
+            }
+            else
+            {
+                sb.Append($" {Square_To_String(Ep_Square())} ");
+            }
+            sb.Append(st->Rule50);
+            sb.Append(' ');
+            sb.Append(1 + (gamePly - (c == BLACK ? 1 : 0)) / 2);
+
+            return sb.ToString();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Set_Castling_Right(Color c, Square rfrom)
+        {
+            Square kfrom = Get_Square_Of_Color<King>(c);
+            var QueenSide = c == WHITE ? White.QueenSide : Black.QueenSide;
+            var KingSide = c == WHITE ? White.KingSide : Black.KingSide;
+            CastlingRights cr = kfrom < rfrom ? KingSide : QueenSide;
             st->CastlingRights |= (int)cr;
             CastlingRightsMask[(int)kfrom] |= (int)cr;
             CastlingRightsMask[(int)rfrom] |= (int)cr;
-            castlingRookSquare[(int)cr] = rfrom;
-            ESquare kto = RelativeSquare(c, (cr & ECastlingRights.KingSide) != 0 ? ESquare.SQ_G1 : ESquare.SQ_C1);
-            ESquare rto = RelativeSquare(c, (cr & ECastlingRights.KingSide) != 0 ? ESquare.SQ_F1 : ESquare.SQ_D1);
-            CastlingPath[(int)cr] = (BetweenBB(rfrom, rto) | BetweenBB(kfrom, kto)) & ~(SquareBB(kfrom) | SquareBB(rfrom));
+            CastlingRookSquare[(int)cr] = rfrom;
+            Square kto = Relativ_Square(c, (cr & KingSide) != 0 ? SQ_G1 : SQ_C1);
+            Square rto = Relativ_Square(c, (cr & KingSide) != 0 ? SQ_F1 : SQ_D1);
+            CastlingPath[(int)cr] = (Between_BB(rfrom, rto) | Between_BB(kfrom, kto)) & ~(Square_BB(kfrom) | Square_BB(rfrom));
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void SetState() 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private void Set_Check_Info<C>() where C : struct, IColor
         {
-            SBitBoard b = GetPieces();
-            int white = (int)EColor.White;
-            int black = (int)EColor.Black;
-            EColor them = SideToMove == EColor.White ? EColor.Black : EColor.White;
+            Bitboard pieces = Get_Pieces();
+            Update_Slider_Blockers(C.Us);
+            Update_Slider_Blockers(C.Them);
+            Square ksq = Get_Square_Of_Color<King>(C.Them);
+            st->CheckSquares[(int)PAWN] = Attacks_BB_Square<Pawn>(ksq, C.Them);
+            st->CheckSquares[(int)KNIGHT] = Attacks_BB_Square<Knight>(ksq);
+            st->CheckSquares[(int)BISHOP] = Attacks_BB_Square<Bishop>(ksq, pieces);
+            st->CheckSquares[(int)ROOK] = Attacks_BB_Square<Rook>(ksq, pieces);
+            st->CheckSquares[(int)QUEEN] = st->CheckSquares[(int)BISHOP] | st->CheckSquares[(int)ROOK];
+            st->CheckSquares[(int)KING] = 0;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private void Set_State(Color us) 
+        {
+            Color them = us == WHITE ? BLACK : WHITE;
             st->Key = 0;
             st->MinorPieceKey = 0;
-            st->NonPawnKey[white] = st->NonPawnKey[black] = 0;
+            st->NonPawnKey[(int)WHITE] = st->NonPawnKey[(int)BLACK] = 0;
             st->PawnKey = Zobrist.NoPawns;
-            st->NonPawnMaterial[white] = st->NonPawnMaterial[black] = VALUE_ZERO;
-            st->CheckersBB = AttackersTo(GetSquare<SKing>(SideToMove)) & GetPieces(them);
-            SetCheckInfo();
+            st->NonPawnMaterial[(int)WHITE] = st->NonPawnMaterial[(int)BLACK] = VALUE_ZERO;
+            st->CheckersBB = Attackers_To(Get_Square_Of_Color<King>(us)) & Get_Pieces_Of_Color(them);
+            if (us == WHITE)
+            {
+                Set_Check_Info<White>();
+            }
+            else  
+            {
+                Set_Check_Info<Black>();
+            }
+            Bitboard b = Get_Pieces();
             while (b != 0)
             {
-                ESquare s = PopLsb(ref b);
-                EPiece pc = PieceOn(s);
-                st->Key ^= Zobrist.Psq[(int)pc][(int)s];
-                if (TypeOf(pc) == EPieceType.Pawn)
+                Square sq = Pop_Lsb(ref b);
+                Piece pc = Piece_On_Square(sq);
+                st->Key ^= Zobrist.Psq[(int)pc][(int)sq];
+                if (Type_Of(pc) == PAWN)
                 {
-                    st->PawnKey ^= Zobrist.Psq[(int)pc][(int)s];
+                    st->PawnKey ^= Zobrist.Psq[(int)pc][(int)sq];
                 }
                 else
                 {
-                    st->NonPawnKey[(int)ColorOf(pc)] ^= Zobrist.Psq[(int)pc][(int)s];
-                    if (TypeOf(pc) != EPieceType.King)
+                    st->NonPawnKey[(int)Color_Of(pc)] ^= Zobrist.Psq[(int)pc][(int)sq];
+                    if (Type_Of(pc) != KING)
                     {
-                        st->NonPawnMaterial[(int)ColorOf(pc)] += PieceValue[(int)pc];
-                        if (TypeOf(pc) <= EPieceType.Bishop)
+                        st->NonPawnMaterial[(int)Color_Of(pc)] += PieceValue[(int)pc];
+                        if (Type_Of(pc) <= BISHOP)
                         {
-                            st->MinorPieceKey ^= Zobrist.Psq[(int)pc][(int)s];
+                            st->MinorPieceKey ^= Zobrist.Psq[(int)pc][(int)sq];
                         }
                     }
                 }
             }
-
-            if (st->EpSquare != ESquare.SquareNone)
+            if (st->EpSquare != SQ_NONE)
             {
-                st->Key ^= Zobrist.EnPassant[(int)FileOf(st->EpSquare)];
-            }   
-            if (SideToMove == EColor.Black)
+                st->Key ^= Zobrist.EnPassant[(int)File_Of(st->EpSquare)];
+            }
+            if (us == BLACK)
             {
                 st->Key ^= Zobrist.Side;
             }
             st->Key ^= Zobrist.Castling[st->CastlingRights];
-            st->MaterialKey = ComputeMaterialKey();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private SKey ComputeMaterialKey()
-        {
-            SKey k = 0;
-            for (EPiece pc = 0; pc < EPiece.PieceNB; pc++)
-            {
-                for (int cnt = 0; cnt< PieceCount[(int)pc]; ++cnt)
-                {
-                    k ^= Zobrist.Psq[(int)pc][8 + cnt];
-                }    
-            }
-            return k;
+            st->MaterialKey = Compute_Material_Key();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetCheckInfo()
+        private Key Compute_Material_Key()
         {
-            SBitBoard pieces = GetPieces();
-            EColor them = SideToMove == EColor.White ? EColor.Black : EColor.White;
-            ESquare ksq = GetSquare<SKing>(them);
-            st->CheckSquares[(int)EPieceType.Pawn - 1] = AttacksBB<SPawn>(ksq, them);
-            st->CheckSquares[(int)EPieceType.Knight - 1] = AttacksBB<SKnight>(ksq);
-            st->CheckSquares[(int)EPieceType.Bishop - 1] = AttacksBB<SBishop>(ksq, pieces);
-            st->CheckSquares[(int)EPieceType.Rook - 1] = AttacksBB<SRook>(ksq, pieces);
-            st->CheckSquares[(int)EPieceType.Queen - 1] = st->CheckSquares[(int)EPieceType.Bishop - 1] | st->CheckSquares[(int)EPieceType.Rook - 1];
-            st->CheckSquares[(int)EPieceType.King - 1] = 0;
+            Key k = 0;
+            foreach (Piece pc in Pieces)
+            {
+                for (int cnt = 0; cnt < PieceCount[(int)pc]; ++cnt)
+                {
+                    k ^= Zobrist.Psq[(int)pc][8 + cnt];
+                }
+            }
+            return k;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public void UpdateSliderBlockers(EColor c)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Update_Slider_Blockers(Color c)
         {
-            EColor them = c == EColor.White ? EColor.Black : EColor.White;
-            ESquare ksq = GetSquare<SKing>(c);
+            Color them = c == WHITE ? BLACK : WHITE;
+            Square ksq = Get_Square_Of_Color<King>(c);
             st->BlockersForKing[(int)c] = 0;
             st->Pinners[(int)them] = 0;
-            SBitBoard snipers = ((AttacksBB<SRook>(ksq) & GetPieces<SPieces<SRook, SQueen>>())
-                              | (AttacksBB<SBishop>(ksq) & GetPieces<SPieces<SBishop, SQueen>>()))
-                              & GetPieces(them);
-            SBitBoard occupancy = GetPieces() ^ snipers;
+            Bitboard snipers = ((Attacks_BB_Square<Rook>(ksq) & Get_Pieces<Pieces<Rook, Queen>>()) | (Attacks_BB_Square<Bishop>(ksq) & Get_Pieces<Pieces<Bishop, Queen>>())) & Get_Pieces_Of_Color(them);
+            Bitboard occupancy = Get_Pieces() ^ snipers;
             while (snipers != 0)
             {
-                ESquare sniperSq = PopLsb(ref snipers);
-                SBitBoard b = BetweenBB(ksq, sniperSq) & occupancy;
-                if (b != 0 && !MoreThanOne(b))
+                Square sniperSq = Pop_Lsb(ref snipers);
+                Bitboard b = Between_BB(ksq, sniperSq) & occupancy;
+                if (b != 0 && !More_Than_One(b))
                 {
                     st->BlockersForKing[(int)c] |= b;
-                    if ((b & GetPieces(c)) != 0)
+                    if ((b & Get_Pieces_Of_Color(c)) != 0)
                     {
                         st->Pinners[(int)them] |= sniperSq;
                     }
@@ -318,316 +391,319 @@ namespace Chess
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard AttackersTo(ESquare s)
+        private Bitboard Attackers_To(Square s)
         {
-            return AttackersTo(s, GetPieces());
+            return Attackers_To(s, Get_Pieces());
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard AttackersTo(ESquare s, SBitBoard occupied)
+        private Bitboard Attackers_To(Square s, Bitboard occupied)
         {
-            return (AttacksBB<SRook>(s, occupied) & GetPieces<SPieces<SRook, SQueen>>())
-                 | (AttacksBB<SBishop>(s, occupied) & GetPieces<SPieces<SBishop, SQueen>>())
-                 | (AttacksBB<SPawn>(s, EColor.White) & GetPieces<SPawn>(EColor.White))
-                 | (AttacksBB<SPawn>(s, EColor.Black) & GetPieces<SPawn>(EColor.Black))
-                 | (AttacksBB<SKnight>(s) & GetPieces<SKnight>())
-                 | (AttacksBB<SKing>(s) & GetPieces<SKing>());
+            return (Attacks_BB_Square<Rook>(s, occupied) & Get_Pieces<Pieces<Rook, Queen>>())
+                 | (Attacks_BB_Square<Bishop>(s, occupied) & Get_Pieces<Pieces<Bishop, Queen>>())
+                 | (Attacks_BB_Square<Pawn>(s, WHITE) & Get_Pieces_Of_Color<Pawn>(WHITE))
+                 | (Attacks_BB_Square<Pawn>(s, BLACK) & Get_Pieces_Of_Color<Pawn>(BLACK))
+                 | (Attacks_BB_Square<Knight>(s) & Get_Pieces<Knight>())
+                 | (Attacks_BB_Square<King>(s) & Get_Pieces<King>());
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool AttackersToExist(ESquare s, SBitBoard occupied, EColor c)
+        private bool Attackers_To_Exist(Square s, Bitboard occupied, Color c)
         {
-            return (AttacksBB<SRook>(s, occupied) & GetPieces<SPieces<SRook, SQueen>>(c)) != 0
-                || (AttacksBB<SBishop>(s, occupied) & GetPieces<SPieces<SBishop, SQueen>>(c)) != 0
-                || (AttacksBB<SPawn>(s, c == EColor.White ? EColor.Black : EColor.White) & GetPieces<SPawn>(c)) !=0
-                || (AttacksBB<SKnight>(s) & GetPieces<SKnight>(c)) !=0
-                || (AttacksBB<SKing>(s) & GetPieces<SKing>(c)) != 0;
+            return (Attacks_BB_Square<Rook>(s, occupied) & Get_Pieces_Of_Color<Pieces<Rook, Queen>>(c)) != 0
+                || (Attacks_BB_Square<Bishop>(s, occupied) & Get_Pieces_Of_Color<Pieces<Bishop, Queen>>(c)) != 0
+                || (Attacks_BB_Square<Pawn>(s, c == WHITE ? BLACK : WHITE) & Get_Pieces_Of_Color<Pawn>(c)) !=0
+                || (Attacks_BB_Square<Knight>(s) & Get_Pieces_Of_Color<Knight>(c)) !=0
+                || (Attacks_BB_Square<King>(s) & Get_Pieces_Of_Color<King>(c)) != 0;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public bool Legal(SMove m)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Legal<C>(Move m) where C : struct, IColor
         {
-            EColor us = SideToMove;
-            EColor them = us == EColor.White ? EColor.Black : EColor.White;
-            ESquare from = m.FromSq();
-            ESquare to = m.ToSq();
-            SBitBoard pieces = GetPieces();
-            if (m.TypeOf() == EMoveType.EnPassant)
+            Square from = From_Sq(m);
+            Square to = To_Sq(m);
+            Bitboard pieces = Get_Pieces();
+            if (Type_Of(m) == EN_PASSANT)
             {
-                ESquare ksq = GetSquare<SKing>(us);
-                ESquare capsq = to - (int)PawnPush(us);
-                SBitBoard occupied = (pieces ^ from ^ capsq) | to;
-                return !((AttacksBB<SRook>(ksq, occupied) & GetPieces<SPieces<SQueen, SRook>>(them)) != 0)
-                    && !((AttacksBB<SBishop>(ksq, occupied) & GetPieces<SPieces<SQueen, SBishop>>(them)) != 0);
+                Square ksq = Get_Square_Of_Color<King>(C.Us);
+                Square capsq = to - (int)Pawn_Push(C.Us);
+                Bitboard occupied = (pieces ^ from ^ capsq) | to;
+                return (Attacks_BB_Square<Rook>(ksq, occupied) & Get_Pieces_Of_Color<Pieces<Queen, Rook>>(C.Them)) == 0 
+                    && (Attacks_BB_Square<Bishop>(ksq, occupied) & Get_Pieces_Of_Color<Pieces<Queen, Bishop>>(C.Them)) == 0;
             }
-            if (m.TypeOf() == EMoveType.Castling)
+            if (Type_Of(m) == CASTLING)
             {
-                to = RelativeSquare(us, to > from ? ESquare.SQ_G1 : ESquare.SQ_C1);
-                EDirection step = to > from ? EDirection.West : EDirection.East;
-                for (ESquare s = to; s != from; s += (int)step)
+                to = Relativ_Square(C.Us, to > from ? SQ_G1 : SQ_C1);
+                Direction step = to > from ? WEST : EAST;
+                for (Square s = to; s != from; s += (int)step)
                 {
-                    if (AttackersToExist(s, pieces, them))
+                    if (Attackers_To_Exist(s, pieces, C.Them))
                     {
                         return false;
                     }    
                 }
-                return !(chess960 != 0) || !((BlockersForKing(us) & m.ToSq()) != 0);
+                return chess960 == 0 || (Blockers_For_King(C.Us) & To_Sq(m)) == 0;
             }
-            if (TypeOf(PieceOn(from)) == EPieceType.King)
+            if (Type_Of(Piece_On_Square(from)) == KING)
             {
-                return !(AttackersToExist(to, pieces ^ from, them));
+                return !(Attackers_To_Exist(to, pieces ^ from, C.Them));
             }
-            return !((BlockersForKing(us) & from) != 0) || (LineBB(from, to) & GetPieces<SKing>(us)) != 0;
+            return (Blockers_For_King(C.Us) & from) == 0 || (Line_BB(from, to) & Get_Pieces_Of_Color<King>(C.Us)) != 0;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void PutPiece(EPiece pc, ESquare s, DirtyThreats* dts) 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private void Put_Piece(Piece pc, Square s, DirtyThreats* dts = null) 
         {
-            EColor c = ColorOf(pc);
-            EPieceType t = TypeOf(pc);
+            Color c = Color_Of(pc);
+            PieceType t = Type_Of(pc);
             Board[(int)s] = pc;
-            ByTypeBB[(int)EPieceType.AllPieces] |= ByTypeBB[(int)t] |= s;
+            ByTypeBB[(int)ALL_PIECE] |= ByTypeBB[(int)t] |= s;
             ByColorBB[(int)c] |= s;
             PieceCount[(int)pc]++;
-            PieceCount[(int)MakePiece(c, EPieceType.AllPieces)]++;
+            PieceCount[(int)Make_Piece(c, ALL_PIECE)]++;
             if (dts != null)
             {
-                UpdatePieceThreats<STrue>(pc, s, dts);
+                Updat_Piece_Threats<True>(pc, s, dts);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void RemovePiece(ESquare s, DirtyThreats* dts) 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private void Remove_Piece(Square s, DirtyThreats* dts = null) 
         {
-            EPiece pc = Board[(int)s];
+            Piece pc = Board[(int)s];
             if (dts != null)
             {
-                UpdatePieceThreats<SFalse>(pc, s, dts);
+                Updat_Piece_Threats<False>(pc, s, dts);
             }
-            ByTypeBB[(int)EPieceType.AllPieces] ^= s;
-            ByTypeBB[(int)TypeOf(pc)] ^= s;
-            ByColorBB[(int)ColorOf(pc)] ^= s;
-            Board[(int)s] = EPiece.NoPiece;
+            ByTypeBB[(int)ALL_PIECE] ^= s;
+            ByTypeBB[(int)Type_Of(pc)] ^= s;
+            ByColorBB[(int)Color_Of(pc)] ^= s;
+            Board[(int)s] = NO_PIECE;
             PieceCount[(int)pc]--;
-            PieceCount[(int)MakePiece(ColorOf(pc), EPieceType.AllPieces)]--;
+            PieceCount[(int)Make_Piece(Color_Of(pc), ALL_PIECE)]--;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void MovePiece(ESquare from, ESquare to, DirtyThreats* dts)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private void Move_Piece(Square from, Square to, DirtyThreats* dts = null)
         {
-            EPiece pc = Board[(int)from];
-            SBitBoard fromTo = SquareBB(from) | SquareBB(to);
+            Piece pc = Board[(int)from];
+            Bitboard fromTo = Square_BB(from) | Square_BB(to);
             if (dts != null)
             {
-                UpdatePieceThreats<SFalse>(pc, from, dts, fromTo);
+                Updat_Piece_Threats<False>(pc, from, dts, fromTo);
             }
-            ByTypeBB[(int)EPieceType.AllPieces] ^= fromTo;
-            ByTypeBB[(int)TypeOf(pc)] ^= fromTo;
-            ByColorBB[(int)ColorOf(pc)] ^= fromTo;
-            Board[(int)from] = EPiece.NoPiece;
+            ByTypeBB[(int)ALL_PIECE] ^= fromTo;
+            ByTypeBB[(int)Type_Of(pc)] ^= fromTo;
+            ByColorBB[(int)Color_Of(pc)] ^= fromTo;
+            Board[(int)from] = NO_PIECE;
             Board[(int)to] = pc;
             if (dts != null)
             {
-                UpdatePieceThreats<STrue>(pc, to, dts, fromTo);
+                Updat_Piece_Threats<True>(pc, to, dts, fromTo);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void SwapPiece(ESquare s, EPiece pc, DirtyThreats* dts)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private void Swap_Piece(Square s, Piece pc, DirtyThreats* dts)
         {
-            EPiece old = Board[(int)s];
-            RemovePiece(s, null);
+            Piece old = Board[(int)s];
+            Remove_Piece(s);
             if (dts != null)
             {
-                UpdatePieceThreats<SFalse, SFalse>(old, s, dts);
+                Updat_Piece_Threats<False, False>(old, s, dts);
             }
-            PutPiece(pc, s, null);
+            Put_Piece(pc, s);
             if (dts != null)
             {
-                UpdatePieceThreats<STrue, SFalse>(pc, s, dts);
+                Updat_Piece_Threats<True, False>(pc, s, dts);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public SBitBoard CheckSquares(EPieceType pt) 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bitboard Check_Squares(PieceType pt) 
         { 
             return st->CheckSquares[(int)pt]; 
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public bool GivesCheck(SMove m)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Gives_Check<C>(Move m) where C : struct, IColor
         {
-            SBitBoard pieces = GetPieces();
-            ESquare from = m.FromSq();
-            ESquare to = m.ToSq();
-            if ((CheckSquares(TypeOf(PieceOn(from))) & to) != 0)
+            Bitboard pieces = Get_Pieces();
+            Square from = From_Sq(m);
+            Square to = To_Sq(m);
+            if ((Check_Squares(Type_Of(Piece_On_Square(from))) & to) != 0)
             {
                 return true;
             }
-            EColor them = SideToMove == EColor.White ? EColor.Black : EColor.White;
-            if ((BlockersForKing(them) & from) != 0)
+            if ((Blockers_For_King(C.Them) & from) != 0)
             {
-                return !((LineBB(from, to) & GetPieces<SKing>(them)) != 0) || m.TypeOf() == EMoveType.Castling;
+                return (Line_BB(from, to) & Get_Pieces_Of_Color<King>(C.Them)) == 0 || Type_Of(m) == CASTLING;
             }
-            switch (m.TypeOf())
+            switch (Type_Of(m))
             {
-                case EMoveType.Normal:
+                case NORMAL:
                     return false;
-                case EMoveType.Promotion:
-                    return (AttacksBB(m.PromotionType(), to, pieces ^ from) & GetPieces<SKing>(them)) != 0;
-                case EMoveType.EnPassant : 
+                case PROMOTION:
+                    return (Attacks_BB(Promotion_Type(m), to, pieces ^ from) & Get_Pieces_Of_Color<King>(C.Them)) != 0;
+                case EN_PASSANT : 
                 {
-                    ESquare capsq = MakeSquare(FileOf(to), RankOf(from));
-                    SBitBoard b = (pieces ^ from ^ capsq) | to;
-                    return ((AttacksBB<SRook>(GetSquare<SKing>(them), b) & GetPieces<SPieces<SQueen, SRook>>(SideToMove))
-                         | (AttacksBB<SBishop>(GetSquare<SKing>(them), b) & GetPieces<SPieces<SQueen, SBishop>>(SideToMove))) != 0;
+                    Square capsq = Make_Square(File_Of(to), Rank_Of(from));
+                    Bitboard b = (pieces ^ from ^ capsq) | to;
+                    return ((Attacks_BB_Square<Rook>(Get_Square_Of_Color<King>(C.Them), b) & Get_Pieces_Of_Color<Pieces<Queen, Rook>>(C.Us)) 
+                         | (Attacks_BB_Square<Bishop>(Get_Square_Of_Color<King>(C.Them), b) & Get_Pieces_Of_Color<Pieces<Queen, Bishop>>(C.Us))) != 0;
                 }
                 default : 
                 {
-                    ESquare rto = RelativeSquare(SideToMove, to > from ? ESquare.SQ_F1 : ESquare.SQ_D1);
-                    return (CheckSquares(EPieceType.Rook) & rto) != 0;
+                    Square rto = Relativ_Square(C.Us, to > from ? SQ_F1 : SQ_D1);
+                    return (Check_Squares(ROOK) & rto) != 0;
                 }
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void DoMove(SMove m, ref StateInfo newSt, bool givesCheck, ref DirtyPiece dp, ref DirtyThreats dts)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe public void Do_Move<C>(Move m, ref StateInfo newSt, bool Gives_Check, ref DirtyPiece dp, ref DirtyThreats dts) where C : struct, IColor
         {
-            fixed (DirtyThreats* d = &dts)
-            fixed (DirtyPiece* p = &dp)
-            fixed (StateInfo* s = &newSt)
+            fixed (StateInfo* sPts = &newSt)
+            fixed (DirtyPiece* dpPts = &dp)
+            fixed (DirtyThreats* dtsPts = &dts)
             {
-                SKey k = st->Key ^ Zobrist.Side;
+                MoveType movetype = Type_Of(m);
+                Key k = st->Key ^ Zobrist.Side;
+                Unsafe.CopyBlock(sPts, st, (uint)Unsafe.ByteOffset(ref Unsafe.As<StateInfo, byte>(ref *st), ref Unsafe.As<Key, byte>(ref st->Key)));
                 newSt.Previous = st;
-                Unsafe.CopyBlock(s, st, (uint)Unsafe.ByteOffset(ref Unsafe.As<StateInfo, byte>(ref *st), ref Unsafe.As<SKey, byte>(ref st->Key)));
-                st = s;
+                st = sPts;
                 ++gamePly;
                 ++st->Rule50;
                 ++st->PliesFromNull;
-                EColor us = SideToMove;
-                EColor them = us == EColor.White ? EColor.Black : EColor.White;
-                ESquare from = m.FromSq();
-                ESquare to = m.ToSq();
-                EPiece pc = PieceOn(from);
-                EPiece captured = m.TypeOf() == EMoveType.EnPassant ? MakePiece(them, EPieceType.Pawn) : PieceOn(to);
+                Square from = From_Sq(m); 
+                Square to = To_Sq(m);
+                Piece pc = Piece_On_Square(from);
+                Piece captured = movetype == EN_PASSANT ? Make_Piece(C.Them, PAWN) : Piece_On_Square(to);
                 dp.Pc = pc;
                 dp.From = from;
                 dp.To = to;
-                dp.AddSq = ESquare.SquareNone;
-                dts.Us = us;
-                dts.PrevKsq = GetSquare<SKing>(us);
+                dp.Add_Sq = SQ_NONE;
+                dts.Us = C.Us;
+                dts.PrevKsq = Get_Square_Of_Color<King>(C.Us);
                 dts.ThreatenedSqs = dts.ThreateningSqs = 0;
-                if (m.TypeOf() == EMoveType.Castling)
+                int pawn_push = (int)Pawn_Push(C.Us);
+                if (movetype == CASTLING)
                 {
-                    ESquare rfrom = ESquare.SquareNone, rto = ESquare.SquareNone;
-                    DoCastling<STrue>(us, from, ref to, ref rfrom, ref rto, d, p);
+                    Square rfrom = default, rto = default;
+                    Do_Castling<True>(C.Us, from, ref to, ref rfrom, ref rto, dtsPts, dpPts);
                     k ^= Zobrist.Psq[(int)captured][(int)rfrom] ^ Zobrist.Psq[(int)captured][(int)rto];
-                    st->NonPawnKey[(int)us] ^= Zobrist.Psq[(int)captured][(int)rfrom] ^ Zobrist.Psq[(int)captured][(int)rto];
-                    captured = EPiece.NoPiece;
+                    st->NonPawnKey[(int)C.Us] ^= Zobrist.Psq[(int)captured][(int)rfrom] ^ Zobrist.Psq[(int)captured][(int)rto];
+                    captured = NO_PIECE;
                 }
-                else if (captured != 0)
+                if (captured != 0)
                 {
-                    ESquare capsq = to;
-                    if (TypeOf(captured) == EPieceType.Pawn)
+                    Square capsq = to;
+                    if (Type_Of(captured) == PAWN)
                     {
-                        if (m.TypeOf() == EMoveType.EnPassant)
+                        if (movetype == EN_PASSANT)
                         {
-                            capsq -= (int)PawnPush(us);
-                            RemovePiece(capsq, d);
+                            capsq -= pawn_push;
+                            Remove_Piece(capsq, dtsPts);
                         }
                         st->PawnKey ^= Zobrist.Psq[(int)captured][(int)capsq];
                     }
                     else
                     {
-                        st->NonPawnMaterial[(int)them] -= PieceValue[(int)captured];
-                        st->NonPawnKey[(int)them] ^= Zobrist.Psq[(int)captured][(int)capsq];
-                        if (TypeOf(captured) <= EPieceType.Bishop)
+                        st->NonPawnMaterial[(int)C.Them] -= PieceValue[(int)pc];
+                        st->PawnKey ^= Zobrist.Psq[(int)captured][(int)capsq];
+                        if (Type_Of(captured) <= BISHOP)
                         {
                             st->MinorPieceKey ^= Zobrist.Psq[(int)captured][(int)capsq];
                         }
                     }
-                    dp.RemovePc = captured;
-                    dp.RemoveSq = capsq;
+                    dpPts->Remove_Pc = captured;
+                    dpPts->Remove_Sq = capsq;
                     k ^= Zobrist.Psq[(int)captured][(int)capsq];
-                    st->MaterialKey ^= Zobrist.Psq[(int)captured][8 + PieceCount[(int)captured] - ((m.TypeOf() != EMoveType.EnPassant) ? 1 : 0)];
+                    st->MaterialKey ^= Zobrist.Psq[(int)captured][8 + PieceCount[(int)captured] - ((Type_Of(m) != EN_PASSANT) ? 1 : 0)];
                     st->Rule50 = 0;
                 }
                 else
                 {
-                    dp.RemoveSq = ESquare.SquareNone;
+                    dpPts->Remove_Pc = NO_PIECE;
                 }
                 k ^= Zobrist.Psq[(int)pc][(int)from] ^ Zobrist.Psq[(int)pc][(int)to];
-                if (st->EpSquare != ESquare.SquareNone)
+                if (st->EpSquare != SQ_NONE)
                 {
-                    k ^= Zobrist.EnPassant[(int)FileOf(st->EpSquare)];
-                    st->EpSquare = ESquare.SquareNone;
+                    k ^= Zobrist.EnPassant[(int)File_Of(st->EpSquare)];
+                    st->EpSquare = SQ_NONE;
                 }
                 k ^= Zobrist.Castling[st->CastlingRights];
                 st->CastlingRights &= ~(CastlingRightsMask[(int)from] | CastlingRightsMask[(int)to]);
                 k ^= Zobrist.Castling[st->CastlingRights];
-                if (m.TypeOf() != EMoveType.Castling)
+                if (movetype != CASTLING)
                 {
-                    if (captured != 0 && m.TypeOf() != EMoveType.EnPassant)
+                    if (captured != 0 && Type_Of(m) != EN_PASSANT)
                     {
-                        RemovePiece(from, d);
-                        SwapPiece(to, pc, d);
+                        Remove_Piece(from, dtsPts);
+                        Swap_Piece(to, pc, dtsPts);
                     }
                     else
                     {
-                        MovePiece(from, to, d);
+                        Move_Piece(from, to, dtsPts);
                     }
                 }
-                if (TypeOf(pc) == EPieceType.Pawn)
+                if (Type_Of(pc) == PAWN)
                 {
-                    if (((int)to ^ (int)from) == 16)
+                    if ((int)(to ^ from) == 16)
                     {
-                        ESquare epSquare = to - (int)PawnPush(us);
-                        SBitBoard pawns = AttacksBB<SPawn>(epSquare, us) & GetPieces<SPawn>(them);
+                        Square epSquare = to - pawn_push;
+                        Bitboard pawns = Attacks_BB_Square<Pawn>(epSquare, C.Us) & Get_Pieces_Of_Color<Pawn>(C.Them);
                         if (pawns != 0)
                         {
-                            ESquare ksq = GetSquare<SKing>(them);
-                            SBitBoard notBlockers = ~st->BlockersForKing[(int)them];
-                            bool noDiscovery = (notBlockers % from) || FileOf(from) == FileOf(ksq);
-                            if (noDiscovery && (pawns & (notBlockers | LineBB(epSquare, ksq))) != 0)
+                            Square ksq = Get_Square_Of_Color<King>(C.Them);
+                            Bitboard notBlockers = ~st->Previous->BlockersForKing[(int)C.Them];
+                            bool noDiscovery = (notBlockers & from) != 0 || File_Of(from) == File_Of(ksq);
+                            if (noDiscovery && (pawns & (notBlockers | Line_BB(epSquare, ksq))) != 0)
                             {
                                 st->EpSquare = epSquare;
-                                k ^= Zobrist.EnPassant[(int)FileOf(epSquare)];
+                                k ^= Zobrist.EnPassant[(int)File_Of(epSquare)];
                             }
                         }
                     }
-                    else if (m.TypeOf() == EMoveType.Promotion)
+                    else if (movetype == PROMOTION)
                     {
-                        EPiece promotion = MakePiece(us, m.PromotionType());
-                        EPieceType promotionType = TypeOf(promotion);
-                        SwapPiece(to, promotion, d);
-                        dp.AddPc = promotion;
-                        dp.AddSq = to;
-                        dp.To = ESquare.SquareNone;
+                        Piece promotion = Make_Piece(C.Us, Promotion_Type(m));
+                        PieceType promotionType = Type_Of(promotion);
+                        Swap_Piece(to, promotion, dtsPts);
+                        
+                        dpPts->Add_Pc = promotion;
+                        dpPts->Add_Sq = to;
+                        dpPts->To = SQ_NONE;
                         k ^= Zobrist.Psq[(int)promotion][(int)to];
-                        st->MaterialKey ^= Zobrist.Psq[(int)promotion][8 + PieceCount[(int)promotion] - 1] ^ Zobrist.Psq[(int)pc][8 + PieceCount[(int)pc]];
-                        st->NonPawnKey[(int)us] ^= Zobrist.Psq[(int)promotion][(int)to];
-                        if (promotionType <= EPieceType.Bishop)
+                        st->MaterialKey ^= Zobrist.Psq[(int)promotion][8 + PieceCount[(int)promotion] - 1]
+                                         ^ Zobrist.Psq[(int)pc][8 + PieceCount[(int)pc]];
+                        st->NonPawnKey[(int)C.Us] ^= Zobrist.Psq[(int)promotion][(int)to];
+                        if (promotionType <= BISHOP)
                         {
                             st->MinorPieceKey ^= Zobrist.Psq[(int)promotion][(int)to];
                         }
-                        st->NonPawnMaterial[(int)us] += PieceValue[(int)promotion];
+                        st->NonPawnMaterial[(int)C.Us] += PieceValue[(int)promotion];
                     }
                     st->PawnKey ^= Zobrist.Psq[(int)pc][(int)from] ^ Zobrist.Psq[(int)pc][(int)to];
                     st->Rule50 = 0;
                 }
                 else
                 {
-                    st->NonPawnKey[(int)us] ^= Zobrist.Psq[(int)pc][(int)from] ^ Zobrist.Psq[(int)pc][(int)to];
-                    if (TypeOf(pc) <= EPieceType.Bishop)
+                    st->NonPawnKey[(int)C.Us] ^= Zobrist.Psq[(int)pc][(int)from] ^ Zobrist.Psq[(int)pc][(int)to];
+                    if (Type_Of(pc) <= BISHOP)
                     {
                         st->MinorPieceKey ^= Zobrist.Psq[(int)pc][(int)from] ^ Zobrist.Psq[(int)pc][(int)to];
                     }
                 }
                 st->Key = k;
                 st->CapturedPiece = captured;
-                st->CheckersBB = givesCheck ? AttackersTo(GetSquare<SKing>(them)) & GetPieces(us) : 0;
-                SideToMove = SideToMove == EColor.White ? EColor.Black : EColor.White;
-                SetCheckInfo();
+                st->CheckersBB = Gives_Check ? Attackers_To(Get_Square_Of_Color<King>(C.Them)) & Get_Pieces_Of_Color(C.Us) : 0;
+                if (C.Us == WHITE)
+                {
+                    Set_Check_Info<Black>();
+                }
+                else
+                {
+                    Set_Check_Info<White>();
+                }
                 st->Repetition = 0;
                 int end = Math.Min(st->Rule50, st->PliesFromNull);
                 if (end >= 4)
                 {
-                    StateInfo* stp = st;
-                    stp = stp->Previous; stp = stp->Previous;
+                    StateInfo* stp = st->Previous->Previous;
                     for (int i = 4; i <= end; i += 2)
                     {
-                        stp = stp->Previous; stp = stp->Previous;
+                        stp = stp->Previous->Previous;
                         if (stp->Key == st->Key)
                         {
                             st->Repetition = stp->Repetition != 0 ? -i : i;
@@ -635,124 +711,120 @@ namespace Chess
                         }
                     }
                 }
-                dts.Ksq = GetSquare<SKing>(us);
-
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public void DoMove(SMove m, ref StateInfo newSt)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe public void Do_Move<C>(Move m, ref StateInfo newSt) where C : struct, IColor
         {
-            scratch_dts = new DirtyThreats();
-            DoMove(m, ref newSt, GivesCheck(m), ref scratch_dp, ref scratch_dts);
+            Do_Move<C>(m, ref newSt, Gives_Check<C>(m), ref scratch_dp, ref scratch_dts);
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void UndoMove(SMove m)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe public void Undo_Move<C>(Move m) where C : struct, IColor
         {
-            SideToMove = SideToMove == EColor.White ? EColor.Black : EColor.White;
-            EColor us = SideToMove;
-            ESquare from = m.FromSq();
-            ESquare to = m.ToSq();
-            EPiece pc = PieceOn(to);
-            if (m.TypeOf() == EMoveType.Promotion)
+            MoveType movetype = Type_Of(m);
+            Square from = From_Sq(m);
+            Square to = To_Sq(m);
+            Piece pc = Piece_On_Square(to);
+            if (movetype == PROMOTION)
             {
-                RemovePiece(to, null);
-                pc = MakePiece(us, EPieceType.Pawn);
-                PutPiece(pc, to, null);
+                Remove_Piece(to);
+                pc = Make_Piece(C.Them, PAWN);
+                Put_Piece(pc, to);
             }
-            if (m.TypeOf() == EMoveType.Castling)
+            if (movetype == CASTLING)
             {
-                ESquare rfrom = 0, rto = 0;
-                DoCastling<SFalse>(us, from, ref to, ref rfrom, ref rto, null, null);
+                Square rfrom = 0, rto = 0;
+                Do_Castling<False>(C.Them, from, ref to, ref rfrom, ref rto);
             }
             else
             {
-                MovePiece(to, from, null);
+                Move_Piece(to, from);
                 if (st->CapturedPiece != 0)
                 {
-                    ESquare capsq = to;
-                    if (m.TypeOf() == EMoveType.EnPassant)
+                    Square capsq = to;
+                    if (Type_Of(m) == EN_PASSANT)
                     {
-                        capsq -= (int)PawnPush(us);
+                        capsq -= (int)Pawn_Push(C.Them);
                     }
-                    PutPiece(st->CapturedPiece, capsq, null);
+                    Put_Piece(st->CapturedPiece, capsq);
                 }
             }
             st = st->Previous;
             --gamePly;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void DoCastling<D>(EColor us, ESquare from, ref ESquare to, ref ESquare rfrom, ref ESquare rto, DirtyThreats* dts, DirtyPiece* dp) where D : struct, IBool
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe public void Do_Castling<D>(Color us, Square from, ref Square to, ref Square rfrom, ref Square rto, DirtyThreats* dts = null, DirtyPiece* dp = null) where D : struct, IBool
         {
             if (dp != null)
             {
                 bool kingSide = to > from;
                 rfrom = to; 
-                rto = RelativeSquare(us, kingSide? ESquare.SQ_F1 : ESquare.SQ_D1);
-                to = RelativeSquare(us, kingSide? ESquare.SQ_G1 : ESquare.SQ_C1);
-                if (D.Value)
+                rto = Relativ_Square(us, kingSide? SQ_F1 : SQ_D1);
+                to = Relativ_Square(us, kingSide? SQ_G1 : SQ_C1);
+                if (D.Value || dp != null )
                 {
                     dp->To = to;
-                    dp->RemovePc = dp->AddPc = MakePiece(us, EPieceType.Rook);
-                    dp->RemoveSq = rfrom;
-                    dp->AddSq = rto;
+                    dp->Remove_Pc = dp->Add_Pc = Make_Piece(us, ROOK);
+                    dp->Remove_Sq = rfrom;
+                    dp->Add_Sq = rto;
                 }
-                RemovePiece(D.Value ? from : to, dts);
-                RemovePiece(D.Value ? rfrom : rto, dts);
-                PutPiece(MakePiece(us, EPieceType.King), D.Value ? to : from, dts);
-                PutPiece(MakePiece(us, EPieceType.Rook), D.Value ? rto : rfrom, dts);
+                Remove_Piece(D.Value ? from : to, dts);
+                Remove_Piece(D.Value ? rfrom : rto, dts);
+                Board[(int)(D.Value ? from : to)] = Board[(int)(D.Value ? rfrom : rto)] = NO_PIECE;
+                Put_Piece(Make_Piece(us, KING), D.Value ? to : from, dts);
+                Put_Piece(Make_Piece(us, ROOK), D.Value ? rto : rfrom, dts);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public static void AddDirtyThreat<B>(DirtyThreats* dts, EPiece pc, EPiece threatened, ESquare s, ESquare threatenedSq) where B : struct, IBool
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private static void Add_Dirty_Threat<B>(DirtyThreats* dts, Piece piece, Piece threatened, Square s, Square threatenedSq) where B : struct, IBool
         {
             if (B.Value)
             {
                 dts->ThreatenedSqs |= threatenedSq;
                 dts->ThreateningSqs |= s;
             }
-            dts->List.Add(new DirtyThreat(pc, threatened, s, threatenedSq, B.Value));
+            //Console.WriteLine("Add start");
+            dts->List.Push_Back(new DirtyThreat(piece, threatened, s, threatenedSq, B.Value));
+            //Console.WriteLine("Add done");
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe private void Updat_Piece_Threats<B>(Piece pc, Square s, DirtyThreats* dts, Bitboard noRaysContaining = default) where B : struct, IBool
+        {
+            Updat_Piece_Threats<B, True>(pc, s, dts, noRaysContaining);
         }
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void UpdatePieceThreats<P>(EPiece pc, ESquare s, DirtyThreats* dts, SBitBoard noRaysContaining = default) where P : struct, IBool
+        unsafe private void Updat_Piece_Threats<B, C>(Piece piece, Square sq, DirtyThreats* dts, Bitboard noRaysContaining = default) where B : struct, IBool where C : struct, IBool
         {
-            UpdatePieceThreats<P, STrue>(pc, s, dts, noRaysContaining);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        unsafe public void UpdatePieceThreats<P, C>(EPiece pc, ESquare s, DirtyThreats* dts, SBitBoard noRaysContaining = default) where P : struct, IBool where C : struct, IBool
-        {
-            SBitBoard occupied = GetPieces();
-            SBitBoard rookQueens = GetPieces<SRook>() | GetPieces<SQueen>();
-            SBitBoard bishopQueens = GetPieces<SBishop>() | GetPieces<SQueen>();
-            SBitBoard rAttacks = AttacksBB<SRook>(s, occupied);
-            SBitBoard bAttacks = AttacksBB<SBishop>(s, occupied);
-            SBitBoard kings = GetPieces<SKing>();
-            SBitBoard occupiedNoK = occupied ^ kings;
-            SBitBoard sliders = (rookQueens & rAttacks) | (bishopQueens & bAttacks);
+            Bitboard occupied = Get_Pieces();
+            Bitboard rookQueens = Get_Pieces<Pieces<Rook, Queen>>();
+            Bitboard bishopQueens = Get_Pieces< Pieces<Bishop, Queen>>();
+            Bitboard rAttacks = Attacks_BB_Square<Rook>(sq, occupied);
+            Bitboard bAttacks = Attacks_BB_Square<Bishop>(sq, occupied);
+            Bitboard kings = Get_Pieces<King>();
+            Bitboard occupiedNoK = occupied ^ kings;
+            Bitboard sliders = (rookQueens & rAttacks) | (bishopQueens & bAttacks);
             void ProcessSliders(bool addDirectAttacks)
             {
                 while (sliders != 0)
                 {
-                    ESquare sliderSq = PopLsb(ref sliders);
-                    EPiece slider = PieceOn(sliderSq);
-                    SBitBoard ray = RayPassBB[(int)sliderSq][(int)s];
-                    SBitBoard discovered = ray & (rAttacks | bAttacks) & occupiedNoK;
-                    if (discovered != 0 && (RayPassBB[(int)sliderSq][(int)s] & noRaysContaining) != noRaysContaining)
+                    Square sliderSq = Pop_Lsb(ref sliders);
+                    Piece slider = Piece_On_Square(sliderSq);
+                    Console.WriteLine(sliderSq);
+                    Bitboard ray = RayPassBB[(int)sliderSq][(int)sq];
+                    Bitboard discovered = ray & (rAttacks | bAttacks) & occupiedNoK;
+                    if (discovered != 0 && (RayPassBB[(int)sliderSq][(int)sq] & noRaysContaining) != noRaysContaining)
                     {
-                        if ((int)Lsb(discovered) >= 64)
-                        {
-                            Console.WriteLine("Bug");
-                        }
-                        ESquare threatenedSq = Lsb(discovered);
-                        EPiece threatenedPc = PieceOn(threatenedSq);
-                        AddDirtyThreat<SUnBool<P>>(dts, slider, threatenedPc, sliderSq, threatenedSq);
+                        Square threatenedSq = Lsb(discovered);
+                        Piece threatenedPc = Piece_On_Square(threatenedSq);
+                        Add_Dirty_Threat<UnBool<B>>(dts, slider, threatenedPc, sliderSq, threatenedSq);
                     }
                     if (addDirectAttacks)
                     {
-                        AddDirtyThreat<P>(dts, slider, pc, sliderSq, s);
+                        Add_Dirty_Threat<B>(dts, slider, piece, sliderSq, sq);
                     }
                 }
             }
-            if (TypeOf(pc) == EPieceType.King)
+            if (Type_Of(piece) == KING)
             {
                 if (C.Value)
                 {
@@ -760,92 +832,75 @@ namespace Chess
                 }
                 return;
             }
-            SBitBoard knights = GetPieces<SKnight>();
-            SBitBoard whitePawns = GetPieces<SPawn>(EColor.White);
-            SBitBoard blackPawns = GetPieces<SPawn>(EColor.Black);
-            SBitBoard threatened = AttacksBB(pc, s, occupied) & occupiedNoK;
-            SBitBoard incomingThreats = (pseudoAttacks[(int)EPieceType.Knight][(int)s] & knights) 
-                                      | (AttacksBB<SPawn>(s, EColor.White) & blackPawns) 
-                                      | (AttacksBB<SPawn>(s, EColor.Black) & whitePawns) 
-                                      | (pseudoAttacks[(int)EPieceType.King][(int)s] & kings);
+            Bitboard threatened = Attacks_BB(piece, sq, occupied) & occupiedNoK;
             while (threatened != 0)
             {
-                ESquare threatenedSq = PopLsb(ref threatened);
-                EPiece threatenedPc = PieceOn(threatenedSq);
-                AddDirtyThreat<P>(dts, pc, threatenedPc, s, threatenedSq);
+                Square threatenedSq = Pop_Lsb(ref threatened);
+                Piece threatenedPc = Piece_On_Square(threatenedSq);
+                Add_Dirty_Threat<B>(dts, piece, threatenedPc, sq, threatenedSq);
             }
             if (C.Value)
             {
-                ProcessSliders(true);
-            }
-            else
-            {
-                incomingThreats |= sliders;
-            }
-            while (incomingThreats != 0)
-            {
-                ESquare srcSq = PopLsb(ref incomingThreats);
-                EPiece srcPc = PieceOn(srcSq);
-                AddDirtyThreat<P>(dts, srcPc, pc, srcSq, s);
+                ProcessSliders(false);
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public EPiece PieceOn(ESquare s)
+        public Piece Piece_On_Square(Square s)
         {
             return Board[(int)s];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ESquare GetSquare<T>(EColor c) where T : struct, IPieceTypes
+        public Square Get_Square_Of_Color<T>(Color c) where T : struct, IPieceTypes
         {
-            return Lsb(GetPieces<T>(c));
+            return Lsb(Get_Pieces_Of_Color<T>(c));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard GetPieces()
+        public Bitboard Get_Pieces()
         {
-            return ByColorBB[(int)EColor.White] | ByColorBB[(int)EColor.Black];
+            return ByColorBB[(int)WHITE] | ByColorBB[(int)BLACK];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard GetPieces<P>(EColor c) where P : struct, IPieceTypes
+        public Bitboard Get_Pieces_Of_Color<P>(Color c) where P : struct, IPieceTypes
         {
-            return GetPieces(c) & P.Get(ByTypeBB);
+            return Get_Pieces_Of_Color(c) & P.Get(ByTypeBB);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard GetPieces(EColor c)
+        public Bitboard Get_Pieces_Of_Color(Color c)
         {
             return ByColorBB[(int)c];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard GetPieces<P>() where P : struct, IPieceTypes
+        public Bitboard Get_Pieces<P>() where P : struct, IPieceTypes
         {
             return P.Get(ByTypeBB);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard BlockersForKing(EColor c)
+        public Bitboard Blockers_For_King(Color c)
         {
             return st->BlockersForKing[(int)c];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CanCastle(ECastlingRights cr)
+        public bool Can_Castle(CastlingRights cr)
         {
             return (st->CastlingRights & (int)cr) != 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CastlingImpeded(ECastlingRights cr) 
+        public bool Castling_Impeded(CastlingRights cr) 
         {
-            return (GetPieces() & CastlingPath[(int)cr]) != 0;
+            return (Get_Pieces() & CastlingPath[(int)cr]) != 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ESquare CastlingRookSquare(ECastlingRights cr)
+        public Square Castling_Rook_Square(CastlingRights cr)
         {
-            return castlingRookSquare[(int)cr];
+            return CastlingRookSquare[(int)cr];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SBitBoard Checkers()
+        public Bitboard Checkers()
         {
             return st->CheckersBB;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ESquare EpSquare()
+        public Square Ep_Square()
         {
             return st->EpSquare;
         }
@@ -853,6 +908,46 @@ namespace Chess
         public bool IsChess960()
         {
             return chess960 != 0;
+        }
+        //┏━┳┓╔═╦╗┌─┬┐
+        //┣━╋┫╠═╬╣├─┼┤
+        //┃ ┃┃║ ║║│ ││
+        //┗━┻┛╚═╩╝└─┴┘
+        public string Show(Color c)
+        {
+            StringBuilder sb = new();
+            sb.AppendLine(" ┌───┬───┬───┬───┬───┬───┬───┬───┐");
+            for (Rank r = RANK_8; ; r--)
+            {
+                for (File f = FILE_A; f <= FILE_H; f++)
+                {
+                    Square sq = Make_Square(f, r);
+                    Piece p = Piece_On_Square(sq);
+                    sb.Append(" │ ");
+                    sb.Append(PieceToChar[(int)p]);
+                }
+                sb.Append(" │ ");
+                sb.Append((int)r + 1);
+                sb.AppendLine();
+                if (r == RANK_1)
+                {
+                    sb.AppendLine(" └───┴───┴───┴───┴───┴───┴───┴───┘");
+                    break;
+                }
+                sb.AppendLine(" ├───┼───┼───┼───┼───┼───┼───┼───┤");
+            }
+            sb.AppendLine("   a   b   c   d   e   f   g   h");
+            sb.AppendLine();
+            sb.AppendLine($"Fen: {Fen(c)}");
+            sb.AppendLine($"Key: {st->Key:X16}");
+            sb.AppendLine($"Checkers: ");
+            Bitboard b = Checkers();
+            while (b != 0)
+            {
+                Square sq = Pop_Lsb(ref b);
+                sb.Append($"{Square_To_String(sq)} ");
+            }
+            return sb.ToString();
         }
     }
 }

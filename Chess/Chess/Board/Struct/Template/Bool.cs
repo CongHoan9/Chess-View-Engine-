@@ -1,14 +1,14 @@
 ﻿namespace Chess
 {
-    public readonly struct STrue : IBool
+    public readonly struct True : IBool
     {
         public static bool Value => true;
     }
-    public readonly struct SFalse : IBool
+    public readonly struct False : IBool
     {
         public static bool Value => false;
     }
-    public readonly struct SUnBool<B> : IBool where B : IBool
+    public readonly struct UnBool<B> : IBool where B : IBool
     {
         public static bool Value => !B.Value;
     }

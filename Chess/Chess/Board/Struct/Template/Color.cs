@@ -1,54 +1,54 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Chess.Bitboards;
+using static Chess.Types;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct SWhite : IColor
+    public readonly struct White : IColor
     {
-        public static EColor Us => EColor.White;
-        public static EColor Them => EColor.Black;
-        public static EDirection Up => EDirection.North;
-        public static SBitBoard Rank3BB => BitBoard.Rank3BB;
-        public static SBitBoard Rank7BB => BitBoard.Rank7BB;
-        public static EDirection UpLeft => EDirection.NorthWest;
-        public static EDirection UpRight => EDirection.NorthEast;
-        public static ECastlingRights KingSide => ECastlingRights.WhiteOO;
-        public static ECastlingRights QueenSide => ECastlingRights.WhiteOOO;
-        public static ECastlingRights CastlingRights => ECastlingRights.WhiteCastling;
-        public static ECastlingRights[] AllCastlingRights => [KingSide, QueenSide];
-        // func
+        public static Color Us => WHITE;
+        public static Color Them => BLACK;
+        public static Direction Up => NORTH;
+        public static Bitboard Rank3 => Rank_3BB;
+        public static Bitboard Rank7 => Rank_7BB;
+        public static Direction UpLeft => NORTH_WEST;
+        public static Direction UpRight => NORTH_EAST;
+        public static CastlingRights KingSide => WHITE_OO;
+        public static CastlingRights QueenSide => WHITE_OOO;
+        public static CastlingRights CastlingRights => WHITE_CASLING;
+        public static CastlingRights[] AllCastlingRights => [KingSide, QueenSide];
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnUp(SBitBoard bb) => bb << 8;
+        public static Bitboard Pawn_Up(Bitboard bb) => bb << 8;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnUpLeft(SBitBoard bb) => (bb & BitBoard.NotFileABB) << 7;
+        public static Bitboard Pawn_Up_Left(Bitboard bb) => (bb & Not_File_ABB) << 7;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnUpRight(SBitBoard bb) => (bb & BitBoard.NotFileHBB) << 9;
+        public static Bitboard Pawn_Up_Right(Bitboard bb) => (bb & Not_File_HBB) << 9;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnDoubleUp(SBitBoard bb) => bb << 16;
+        public static Bitboard Pawn_Double_Up(Bitboard bb) => bb << 16;
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct SBlack : IColor
+    public readonly struct Black : IColor
     {
-        public static EColor Us => EColor.Black;
-        public static EColor Them => EColor.White;
-        public static EDirection Up => EDirection.South;
-        public static SBitBoard Rank3BB => BitBoard.Rank6BB;
-        public static SBitBoard Rank7BB => BitBoard.Rank2BB;
-        public static EDirection UpLeft => EDirection.SouthWest;
-        public static EDirection UpRight => EDirection.SouthEast;
-        public static ECastlingRights KingSide => ECastlingRights.BlackOO;
-        public static ECastlingRights QueenSide => ECastlingRights.BlackOOO;
-        public static ECastlingRights CastlingRights => ECastlingRights.BlackCastling;
-        public static ECastlingRights[] AllCastlingRights => [KingSide, QueenSide];
-        // func
+        public static Color Us => BLACK;
+        public static Color Them => WHITE;
+        public static Direction Up => SOUTH;
+        public static Bitboard Rank3 => Rank_6BB;
+        public static Bitboard Rank7 => Rank_2BB;
+        public static Direction UpLeft => SOUTH_EAST;
+        public static Direction UpRight => SOUTH_WEST;
+        public static CastlingRights KingSide => BLACK_OO;
+        public static CastlingRights QueenSide => BLACK_OOO;
+        public static CastlingRights CastlingRights => BLACK_CASLING;
+        public static CastlingRights[] AllCastlingRights => [KingSide, QueenSide];
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnUp(SBitBoard bb) => bb >> 8;
+        public static Bitboard Pawn_Up(Bitboard bb) => bb >> 8;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnUpLeft(SBitBoard bb) => (bb & BitBoard.NotFileABB) >> 9;
+        public static Bitboard Pawn_Up_Left(Bitboard bb) => (bb & Not_File_ABB) >> 9;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnUpRight(SBitBoard bb) => (bb & BitBoard.NotFileHBB) >> 7;
+        public static Bitboard Pawn_Up_Right(Bitboard bb) => (bb & Not_File_HBB) >> 7;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SBitBoard PawnDoubleUp(SBitBoard bb) => bb >> 16;
+        public static Bitboard Pawn_Double_Up(Bitboard bb) => bb >> 16;
     }
 }
 

@@ -1,56 +1,60 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Chess.Types;
 namespace Chess
 {
+    using Value = Int32;
+    using Key = UInt64;
     [StructLayout(LayoutKind.Sequential)]
     unsafe public struct StateInfo()
     {
-        public SKey MaterialKey;
-        public SKey PawnKey;
-        public SKey MinorPieceKey;
+        public Key MaterialKey;
+        public Key PawnKey;
+        public Key MinorPieceKey;
         public NonPawnKey NonPawnKey;
         public NonPawnMaterial NonPawnMaterial;
         public int CastlingRights;
         public int Rule50;
         public int PliesFromNull;
-        public ESquare EpSquare;
-        public SKey Key;
-        public SBitBoard CheckersBB;
+        public Square EpSquare;
+        public Key Key;
+
+        public Bitboard CheckersBB;
         public StateInfo* Previous;
         public BlockersForKing BlockersForKing;
         public Pinners Pinners;
         public CheckSquares CheckSquares;
-        public EPiece CapturedPiece;
+        public Piece CapturedPiece;
         public int Repetition;
     }
-    [InlineArray((int)EColor.ColorNB)]
+    [InlineArray((int)COLOR_NB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct NonPawnKey
     {
-        private SKey Raw;
+        private Key Raw;
     }
-    [InlineArray((int)EColor.ColorNB)]
+    [InlineArray((int)COLOR_NB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct NonPawnMaterial
     {
-        private SValue Raw;
+        private Value Raw;
     }
-    [InlineArray((int)EColor.ColorNB)]
+    [InlineArray((int)COLOR_NB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct BlockersForKing
     {
-        private SBitBoard Raw;
+        private Bitboard Raw;
     }
-    [InlineArray((int)EColor.ColorNB)]
+    [InlineArray((int)COLOR_NB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct Pinners
     {
-        private SBitBoard Raw;
+        private Bitboard Raw;
     }
-    [InlineArray((int)EPieceType.PieceTypeNB)]
+    [InlineArray((int)PIECE_TYPE_NB)]
     [StructLayout(LayoutKind.Sequential)]
     public struct CheckSquares
     {
-        private SBitBoard Raw;
+        private Bitboard Raw;
     }
 }

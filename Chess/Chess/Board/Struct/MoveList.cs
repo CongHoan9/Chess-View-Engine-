@@ -1,52 +1,52 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Chess.MoveGen;
 using static Chess.Types;
-
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct MoveList<T> : IDisposable where T : struct, IGenType
+    unsafe public ref struct MoveList<T, C> where T : struct, IGenType where C : struct, IColor
     {
-        private SMove* begin;
-        private SMove* last;
+        private MoveValues list;
+        private readonly long size;
         public MoveList(Position pos)
         {
-            begin = (SMove*)NativeMemory.Alloc(MAX_MOVES, (nuint)sizeof(SMove));
-            last = T.Type == EGenType.Legal ? MoveGen.GenerateLegal(pos, begin) : MoveGen.Generate<T>(pos, begin);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly SMove* Begin() => begin;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly SMove* End() => last;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly int Size() => (int)(last - begin);
-        public void Dispose()
-        {
-            if (begin != null)
+            fixed (Move* ptr = &list[0])
             {
-                NativeMemory.Free(begin);
-                begin = null;
-                last = null;
+                Move* end = T.Type == LEGAL ? Generate_Legal<C>(pos, ptr) : Generate<T, C>(pos, ptr);
+                size = end - ptr;
             }
         }
-        public readonly Enumerator GetEnumerator() 
-        { 
-            return new Enumerator(Begin(), End());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly long Size()
+        {
+            return size;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Enumerator GetEnumerator()
+        {
+            fixed (Move* ptr = &list[0])
+            {
+                return new Enumerator(ptr, ptr + size);
+            }
         }
     }
-    [StructLayout(LayoutKind.Sequential)] 
-    unsafe public ref struct Enumerator(SMove* begin, SMove* end) 
-    { 
-        private SMove* cur = begin - 1;
-        private readonly SMove* end = end;
+    [InlineArray(MAX_MOVES)]
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MoveValues
+    {
+        public Move Raw;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    unsafe public ref struct Enumerator(Move* begin, Move* end)
+    {
+        private Move* current = begin - 1;
+        private readonly Move* end = end;
         public bool MoveNext()
-        { 
-            cur++; 
-            return cur < end;
+        {
+            current++;
+            return current < end;
         }
-        public SMove Current => *cur;
+        public Move Current => *current;
     }
 }

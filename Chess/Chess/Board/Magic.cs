@@ -7,19 +7,19 @@ namespace Chess
         static abstract int Index { get; }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct SMagic
+    unsafe public struct Magic
     {
-        public ulong mask;
-        public SBitBoard[] attacks;
-        public ulong magic;
+        public Bitboard mask;
+        public Bitboard* attacks;
+        public Bitboard magic;
         public int Shift;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly int Index(ulong occupied)
+        public readonly int Index(Bitboard occupied)
         {
-            return (int)(((occupied & mask) * magic) >> Shift);
+            return (int)(((occupied & mask) * magic).Raw >> Shift);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly ulong AttacksBB(ulong occupied)
+        public readonly Bitboard Attacks_BB(Bitboard occupied)
         {
             return attacks[Index(occupied)];
         }

@@ -1,15 +1,15 @@
 ﻿namespace Chess
 {
-    public enum EFile : int
+    public enum File : int
     {
-        FileA,
-        FileB,
-        FileC,
-        FileD,
-        FileE,
-        FileF,
-        FileG,
-        FileH,
-        FileNB
+        FILE_A,
+        FILE_B,
+        FILE_C,
+        FILE_D,
+        FILE_E,
+        FILE_F,
+        FILE_G,
+        FILE_H,
+        FILE_NB
     }
 }

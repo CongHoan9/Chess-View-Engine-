@@ -1,15 +1,15 @@
 ﻿namespace Chess
 {
-    public enum ERank : int
+    public enum Rank : int
     {
-        Rank1,
-        Rank2,
-        Rank3,
-        Rank4,
-        Rank5,
-        Rank6,
-        Rank7,
-        Rank8,
-        RankNB
+        RANK_1,
+        RANK_2,
+        RANK_3,
+        RANK_4,
+        RANK_5,
+        RANK_6,
+        RANK_7,
+        RANK_8,
+        RANK_NB
     }
 }

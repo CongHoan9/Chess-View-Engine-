@@ -1,0 +1,57 @@
+using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using static Chess.Types;
+
+namespace Chess
+{
+    [StructLayout(LayoutKind.Sequential)]
+    unsafe public ref struct MoveList<T> where T : struct, IGenType
+    {
+        private MoveValues list;
+        private readonly SMove* last;
+        public MoveList(Position pos)
+        {
+            fixed (SMove* ptr = &list[0])
+            {
+                last = MoveGen.Generate<T>(pos, ptr);
+                //last = T.Type == EGenType.Legal ? MoveGen.GenerateLegal(pos, ptr) : MoveGen.Generate<T>(pos, ptr);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly int Size()
+        {
+            fixed (SMove* ptr = &list[0])
+            {
+                return (last - ptr);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Enumerator GetEnumerator()
+        {
+            fixed (SMove* ptr = &list[0])
+            {
+                return new Enumerator(ptr, last);
+            }
+        }
+    }
+    [InlineArray(MAX_MOVES)]
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MoveValues
+    {
+        private SMove Raw;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    unsafe public ref struct Enumerator(SMove* begin, SMove* end)
+    {
+        private SMove* cur = begin - 1;
+        private readonly SMove* end = end;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+            cur++;
+            return cur < end;
+        }
+        public SMove Current => *cur;
+    }
+}

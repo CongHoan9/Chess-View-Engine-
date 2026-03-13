@@ -10,7 +10,7 @@ namespace Chess
         public int Score;
         public byte Flag;
         public sbyte Depth;
-        public SMove bestmove;
+        public Move bestmove;
     }
     public static class TranspositionTable
     {
@@ -18,7 +18,7 @@ namespace Chess
         public static readonly uint TableMask = TableSize - 1;  
         public static readonly TTEntry[] TT = new TTEntry[TableSize];
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Store(ulong key, sbyte depth, int score, byte flag, SMove best)
+        public static void Store(ulong key, sbyte depth, int score, byte flag, Move best)
         {
             uint index = (uint)key ^ (uint)(key >> 32);
             index &= TableMask;

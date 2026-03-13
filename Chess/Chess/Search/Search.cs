@@ -1,8 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Windows.Documents;
-
-namespace Chess
+﻿namespace Chess
 {
     public static class Search
     {

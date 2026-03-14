@@ -73,11 +73,7 @@ namespace Chess
         {
             fixed (Bitboard* tb = table)
             {
-                int[][] seeds = 
-                [ 
-                    [8977,44560,54343,38998,5731,95205,104912,17020],
-                    [728,10316,55013,32803,12281,15100,16645,255] 
-                ];
+                int[] seeds = [728,10316,55013,32803,12281,15100,16645,255];
                 Bitboard[] occupancy = new Bitboard[4096];
                 Bitboard[] reference = new Bitboard[4096];
                 int[] epoch = new int[4096];
@@ -101,7 +97,7 @@ namespace Chess
                             b = (b - m->mask) & m->mask;
                         }
                         while (b != 0);
-                        PRNG rng = new((ulong)seeds[1][(int)Rank_Of(s)]);
+                        PRNG rng = new((ulong)seeds[(int)Rank_Of(s)]);
                         for (int i = 0; i < size;)
                         {
                             for (m->magic = 0; BitOperations.PopCount((m->magic * m->mask) >> 56) < 6;)

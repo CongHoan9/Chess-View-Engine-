@@ -2,10 +2,6 @@
 using System.Runtime.InteropServices;
 namespace Chess
 {
-    public interface IMagic
-    {
-        static abstract int Index { get; }
-    }
     [StructLayout(LayoutKind.Sequential)]
     unsafe public struct Magic
     {

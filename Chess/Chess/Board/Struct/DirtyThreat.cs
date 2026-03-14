@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Chess.Types;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
@@ -65,7 +64,7 @@ namespace Chess
     [StructLayout(LayoutKind.Sequential)]
     public struct DirtyThreatList
     {
-        private DirtyThreatValues Raw;
+        private ValueList Raw;
         private int count;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Push_Back(DirtyThreat t)
@@ -74,7 +73,7 @@ namespace Chess
         }
     }
     [InlineArray(96)]
-    public struct DirtyThreatValues
+    public struct ValueList
     {
         public DirtyThreat Raw;
     }

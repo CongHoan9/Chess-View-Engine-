@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using static Chess.Types;
+using static Chess.MoveType;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]

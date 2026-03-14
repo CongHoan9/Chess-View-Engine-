@@ -1,7 +1,10 @@
 ﻿using System.Runtime.CompilerServices;
+using static Chess.MoveType;
+using static Chess.GenType;
+using static Chess.Square;
+using static Chess.Color;
 using static Chess.Bitboards;
 using static Chess.FuncBit;
-using static Chess.Types;
 namespace Chess
 {
     public static class MoveGen
@@ -47,9 +50,9 @@ namespace Chess
         unsafe private static Move* Generate_Pawn_Moves<C, G>(Position pos, Move* moveList, Bitboard target) where C : struct, IColor where G : struct, IGenType
         {
             Bitboard emptySquares = ~pos.Get_Pieces();
-            Bitboard enemies = (G.Type == EVASION) ? pos.Checkers() : pos.Get_Pieces_Of_Color(C.Them);
-            Bitboard Pawn_sOn7 = pos.Get_Pieces_Of_Color<Pawn>(C.Us) & C.Rank7;
-            Bitboard Pawn_sNotOn7 = pos.Get_Pieces_Of_Color<Pawn>(C.Us) & ~C.Rank7;
+            Bitboard enemies = (G.Type == EVASION) ? pos.Checkers() : pos.Get_Pieces(C.Them);
+            Bitboard Pawn_sOn7 = pos.Get_Pieces<Pawn>(C.Us) & C.Rank7;
+            Bitboard Pawn_sNotOn7 = pos.Get_Pieces<Pawn>(C.Us) & ~C.Rank7;
             if (G.Type != CAPTURE)
             {
                 Bitboard b1 = Shift<Pawn_Up<C>>(Pawn_sNotOn7) & emptySquares;
@@ -96,7 +99,7 @@ namespace Chess
                     {
                         return moveList;
                     }
-                    b1 = Pawn_sNotOn7 & Attacks_BB_Square<Pawn>(pos.Ep_Square(), C.Them);
+                    b1 = Pawn_sNotOn7 & Attacks_BB<Pawn>(pos.Ep_Square(), C.Them);
                     while (b1 != 0)
                     {
                         *moveList++ = Move.Make_Move<EnPassant>(Pop_Lsb(ref b1), pos.Ep_Square());
@@ -108,11 +111,11 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         unsafe private static Move* Generate_Moves<C, P>(Position pos, Move* moveList, Bitboard target) where C : struct, IColor where P : struct, IPieceType, IPieceTypes
         {
-            Bitboard bb = pos.Get_Pieces_Of_Color<P>(C.Us);
+            Bitboard bb = pos.Get_Pieces<P>(C.Us);
             while (bb != 0)
             {
                 Square from = Pop_Lsb(ref bb);
-                Bitboard b = Attacks_BB_Square<P>(from, pos.Get_Pieces()) & target;
+                Bitboard b = Attacks_BB<P>(from, pos.Get_Pieces()) & target;
                 moveList = Splat_Moves(moveList, from, b); 
             }
             return moveList;
@@ -120,13 +123,13 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         unsafe private static Move* Generate_All<C, G>(Position pos, Move* moveList) where C : struct, IColor where G : struct, IGenType
         {
-            Square ksq = pos.Get_Square_Of_Color<King>(C.Us);
+            Square ksq = pos.Get_Square<King>(C.Us);
             Bitboard target = 0;
             if (G.Type != EVASION || !More_Than_One(pos.Checkers()))
             {
                 target = G.Type == EVASION    ? Between_BB(ksq, Lsb(pos.Checkers()))
-                       : G.Type == NON_EVASION ? ~pos.Get_Pieces_Of_Color(C.Us)
-                       : G.Type == CAPTURE    ? pos.Get_Pieces_Of_Color(C.Them)
+                       : G.Type == NON_EVASION ? ~pos.Get_Pieces(C.Us)
+                       : G.Type == CAPTURE    ? pos.Get_Pieces(C.Them)
                                                         : ~pos.Get_Pieces();
                 moveList = Generate_Pawn_Moves<C, G>(pos, moveList, target);
                 moveList = Generate_Moves<C, Knight>(pos, moveList, target);
@@ -134,7 +137,7 @@ namespace Chess
                 moveList = Generate_Moves<C, Rook>(pos, moveList, target);
                 moveList = Generate_Moves<C, Queen>(pos, moveList, target);
             }
-            Bitboard b = Attacks_BB_Square<King>(ksq) & (G.Type == EVASION ? ~pos.Get_Pieces_Of_Color(C.Us) : target);
+            Bitboard b = Attacks_BB<King>(ksq) & (G.Type == EVASION ? ~pos.Get_Pieces(C.Us) : target);
             moveList = Splat_Moves(moveList, ksq, b);
             if ((G.Type == QUIET || G.Type == NON_EVASION) && pos.Can_Castle(C.CastlingRights))
             {
@@ -156,8 +159,8 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         unsafe public static Move* Generate_Legal<C>(Position pos, Move* moveList) where C : struct, IColor
         {
-            Bitboard pinned = pos.Blockers_For_King(C.Us) & pos.Get_Pieces_Of_Color(C.Us);
-            Square ksq = pos.Get_Square_Of_Color<King>(C.Us);
+            Bitboard pinned = pos.Blockers_For_King(C.Us) & pos.Get_Pieces(C.Us);
+            Square ksq = pos.Get_Square<King>(C.Us);
             Move* cur = moveList;
             moveList = pos.Checkers() != 0 ? Generate<Evasions, C>(pos, moveList) : Generate<NON_EVASIONs, C>(pos, moveList);
             while (cur != moveList)

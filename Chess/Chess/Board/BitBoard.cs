@@ -1,5 +1,8 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using static Chess.PieceType;
+using static Chess.Square;
+using static Chess.Color;
 using static Chess.FuncBit;
 using static Chess.Types;
 namespace Chess
@@ -195,17 +198,17 @@ namespace Chess
             };
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Attacks_BB_Square<P>(Square s, Color c = COLOR_NB) where P : struct, IPieceType
+        public static Bitboard Attacks_BB<P>(Square s, Color c = COLOR_NB) where P : struct, IPieceType
         {
             return P.Type == PAWN ? PseudoAttacks[(int)c][(int)s] : PseudoAttacks[(int)P.Type][(int)s];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Attacks_BB_Square<P>(Square s, Bitboard occupied) where P : struct, IPieceType, IPieceTypes
+        public static Bitboard Attacks_BB<P>(Square s, Bitboard occupied) where P : struct, IPieceType, IPieceTypes
         {
             return P.Type switch
             {
                 BISHOP or ROOK => Magics[(int)s][P.Type - BISHOP].Attacks_BB(occupied),
-                QUEEN => Attacks_BB_Square<Bishop>(s, occupied) | Attacks_BB_Square<Rook>(s, occupied),
+                QUEEN => Attacks_BB<Bishop>(s, occupied) | Attacks_BB<Rook>(s, occupied),
                 _ => PseudoAttacks[(int)P.Type][(int)s],
             };
         }
@@ -215,7 +218,7 @@ namespace Chess
             return pt switch
             {
                 BISHOP or ROOK => Magics[(int)sq][pt - BISHOP].Attacks_BB(occupied),
-                QUEEN => Attacks_BB_Square<Bishop>(sq, occupied) | Attacks_BB_Square<Rook>(sq, occupied),
+                QUEEN => Attacks_BB<Bishop>(sq, occupied) | Attacks_BB<Rook>(sq, occupied),
                 _ => PseudoAttacks[(int)pt][(int)sq],
             };
         }

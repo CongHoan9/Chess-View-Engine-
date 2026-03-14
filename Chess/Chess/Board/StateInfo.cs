@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Chess.Types;
+using static Chess.PieceType;
+using static Chess.Color;
 namespace Chess
 {
     using Value = Int32;

@@ -9,14 +9,14 @@
     public enum Direction : int
     {
         NORTH = 8,
-        SOUTH = -8,
         EAST = 1,
-        WEST = -1,
-        NORTH_EAST = 9,
-        NORTH_WEST = 7,
-        SOUTH_EAST = -7,
-        SOUTH_WEST = -9,
-        NORTH_NORTH = 16,
-        SOUTH_SOUTH = -16
+        SOUTH = -NORTH,
+        WEST = -EAST,
+        NORTH_EAST = NORTH + EAST,
+        SOUTH_EAST = SOUTH + EAST,
+        SOUTH_WEST = SOUTH + WEST,
+        NORTH_WEST = NORTH + WEST,
+        NORTH_NORTH = NORTH + NORTH,
+        SOUTH_SOUTH = SOUTH + SOUTH,
     }
 }

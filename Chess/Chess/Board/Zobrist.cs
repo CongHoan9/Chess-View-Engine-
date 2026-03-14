@@ -1,4 +1,7 @@
-﻿using static Chess.Types;
+﻿using static Chess.CastlingRights;
+using static Chess.Square;
+using static Chess.Piece;
+using static Chess.File;
 namespace Chess
 {
     using Key = UInt64;
@@ -6,7 +9,7 @@ namespace Chess
     {
         public static Key[][] Psq { get; } = [.. Enumerable.Range(0, (int)PIECE_NB).Select(_ => new Key[(int)SQ_NB])];
         public static Key[] EnPassant { get; } = new Key[(int)FILE_NB];
-        public static Key[] Castling { get; } = new Key[(int)CASTLING_RIGHR_NB];
+        public static Key[] Castling { get; } = new Key[(int)CASTLING_RIGHT_NB];
         public static Key Side { get; set; }
         public static Key NoPawns { get; set; }
         static Zobrist()
@@ -23,7 +26,7 @@ namespace Chess
             {
                 EnPassant[(int)f] = rng.Rand64();
             }
-            for (CastlingRights c = 0; c < CASTLING_RIGHR_NB; c++)
+            for (CastlingRights c = 0; c < CASTLING_RIGHT_NB; c++)
             {
                 Castling[(int)c] = rng.Rand64();
             }

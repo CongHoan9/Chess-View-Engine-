@@ -4,11 +4,12 @@
     {
         public static abstract Color Us { get; }
         public static abstract Color Them { get; }
-        public static abstract Direction Up { get; }
         public static abstract Bitboard Rank3 { get; }
         public static abstract Bitboard Rank7 { get; }
+        public static abstract Direction Up { get; }
         public static abstract Direction UpLeft { get; }
         public static abstract Direction UpRight { get; }
+        public static abstract Direction Double { get; }
         public static abstract CastlingRights KingSide { get; }
         public static abstract CastlingRights QueenSide { get; }
         public static abstract CastlingRights CastlingRights { get; }

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Chess.Types;
+using static Chess.PieceType;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]

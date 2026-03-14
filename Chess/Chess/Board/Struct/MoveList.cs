@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Chess.GenType;
 using static Chess.MoveGen;
 using static Chess.Types;
 namespace Chess

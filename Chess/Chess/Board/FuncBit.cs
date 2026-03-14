@@ -1,7 +1,10 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using static Chess.PieceType;
+using static Chess.Direction;
+using static Chess.Square;
+using static Chess.Color;
 using static Chess.Bitboards;
-using static Chess.Types;
 namespace Chess
 {
     using Key = UInt64;
@@ -50,7 +53,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Pawn_Attacks_BB<C>(Bitboard b) where C : struct, IColor
         {
-            return Shift<Pawn_Up_Left<C>>(b) | Shift<Pawn_Up_Left<C>>(b);
+            return Shift<Pawn_Up_Left<C>>(b) | Shift<Pawn_Up_Right<C>>(b);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Pawn_Attacks_BB<C>(Square s) where C : struct, IColor

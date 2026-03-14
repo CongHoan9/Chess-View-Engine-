@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Chess.PieceType;
 using static Chess.Types;
 
 namespace Chess
@@ -43,7 +44,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public PieceType Promotion_Type()
         {
-            return (PieceType)((Raw >> 12) & 3 + (int)KNIGHT);
+            return (PieceType)(((Raw >> 12) & 3) + (int)KNIGHT);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Move Make_Move<M>(Square from, Square to) where M : struct, IMoveType

@@ -1,8 +1,7 @@
-﻿using System.Drawing.Imaging;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Chess.Direction;
 using static Chess.Bitboards;
-using static Chess.Types;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
@@ -129,7 +128,7 @@ namespace Chess
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Pawn_Double_Up<C> : IDirection where C : struct, IColor
     {
-        public static Direction Offset => (int)C.Up + C.Up;
+        public static Direction Offset => C.Double;
         public static Bitboard Mask => ulong.MaxValue;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Shift(Bitboard bb)

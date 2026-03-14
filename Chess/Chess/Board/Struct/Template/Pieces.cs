@@ -33,10 +33,9 @@ namespace Chess
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Bishop : IPieceType, IPieceTypes, IMagic
+    public readonly struct Bishop : IPieceType, IPieceTypes
     {
         public static PieceType Type => BISHOP;
-        public static int Index => 1;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Get(Bitboard[] bb)
         {
@@ -44,10 +43,9 @@ namespace Chess
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Rook : IPieceType, IPieceTypes, IMagic
+    public readonly struct Rook : IPieceType, IPieceTypes
     {
         public static PieceType Type => ROOK;
-        public static int Index => 0;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Get(Bitboard[] bb)
         {

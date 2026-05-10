@@ -1,0 +1,252 @@
+Chess UCI Guide
+================
+
+Tong quan
+---------
+- Console app nay da duoc gom ve mot shell lenh duy nhat voi prompt `uci>`.
+- Ban khong can menu nua. Tat ca chuc nang duoc goi bang lenh.
+- Co 2 nhom lenh:
+  1. Lenh UCI / pseudo-UCI de lam viec voi engine.
+  2. Lenh mo rong cho console: `play`, `match`, `help`, `guide`, `clear`.
+
+
+1. Lenh co ban
+--------------
+- `help`
+  In huong dan ngan ngay trong console.
+
+- `guide`
+  In toan bo file huong dan nay trong console.
+
+- `clear`
+  Xoa man hinh va in lai banner.
+
+- `quit`
+  Thoat chuong trinh.
+
+
+2. Lenh UCI co san
+------------------
+- `uci`
+  In ten engine, author, options, va ket thuc bang `uciok`.
+
+- `isready`
+  Kiem tra engine san sang. Ket qua: `readyok`.
+
+- `ucinewgame`
+  Reset game state, history, va TT.
+
+- `setoption name <Ten Option> value <Gia tri>`
+  Vi du:
+  `setoption name Hash value 128`
+  `setoption name Move Overhead value 20`
+  `setoption name Use NNUE value true`
+
+- `position startpos`
+  Dat vi tri ve ban co mac dinh.
+
+- `position startpos moves e2e4 e7e5`
+  Dat vi tri tu startpos roi phat lai danh sach nuoc di.
+
+- `position fen <FEN>`
+  Dat vi tri bang FEN.
+
+- `position fen <FEN> moves <move1> <move2> ...`
+  Dat vi tri bang FEN roi phat lai tiep danh sach nuoc di.
+
+- `d`
+  In ban co hien tai.
+
+- `fen`
+  In FEN hien tai.
+
+- `eval`
+  In thong tin trace eval / NNUE.
+
+
+3. Lenh tim nuoc
+----------------
+- `go depth N`
+  Tim nuoc toi depth N.
+  Vi du:
+  `go depth 8`
+
+- `go movetime MS`
+  Moi nuoc dung toi da MS mili-giay.
+  Vi du:
+  `go movetime 1000`
+
+- `go wtime WT btime BT winc WI binc BI`
+  Tim nuoc theo clock.
+  Vi du:
+  `go wtime 300000 btime 300000 winc 0 binc 0`
+
+- `go nodes N`
+  Tim den khi dung N nodes.
+
+- `go infinite`
+  Tim vo han cho toi khi co co che stop.
+
+Ket qua se co dang:
+- dong `info ...`
+- dong `bestmove ...`
+
+
+4. Lenh perft
+-------------
+- `perft N`
+  Chay perft o depth N tren vi tri hien tai.
+  Khac voi ban cu, lenh nay se in:
+  - tong node tung move
+  - time tung move
+  - speed tung move
+  - tong nodes / tong time / tong speed
+
+  Vi du:
+  `position startpos`
+  `perft 5`
+
+- `go perft N`
+  Alias theo phong cach UCI shell.
+  Vi du:
+  `go perft 5`
+
+Ghi chu:
+- Truoc khi chay perft, hay dung `position ...` de dat vi tri muon test.
+- Neu muon test start position:
+  `position startpos`
+  `perft 6`
+
+
+5. Play voi engine
+------------------
+Lenh:
+- `play [white|black|random] [go-args]`
+
+Y nghia:
+- Lenh nay dung vi tri hien tai cua engine.
+- Ban dat vi tri bang `position ...` truoc.
+- Mau mac dinh neu khong ghi la `white`.
+- Gioi han tim nuoc dung cu phap giong `go`.
+
+Vi du:
+- `position startpos`
+- `play white depth 8`
+
+- `position startpos moves e2e4 e7e5`
+- `play black movetime 1000`
+
+- `position fen r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3`
+- `play random depth 10`
+
+Trong play mode, cac lenh sau duoc chap nhan:
+- `e2e4`, `g1f3`, `e7e8q`, ...
+  Nuoc di theo dinh dang UCI.
+
+- `d`
+  In ban co.
+
+- `fen`
+  In FEN hien tai.
+
+- `eval`
+  In trace eval.
+
+- `hint`
+  Yeu cau engine goi y nuoc tu vi tri hien tai, khong tu dong danh.
+
+- `help`
+  In huong dan ngan cho play mode.
+
+- `end`
+  Thoat play mode, quay lai shell `uci>`.
+
+Luu y:
+- Play mode su dung chinh engine hien tai, vi vay trang thai vi tri se duoc giu lai sau khi thoat.
+- Neu muon reset, dung `ucinewgame` hoac `position startpos`.
+
+
+6. Engine vs Engine
+-------------------
+Lenh:
+- `match [go-args chung] [white go-args] [black go-args] [plies N]`
+
+Y nghia:
+- `match` tao 2 engine tam thoi tu vi tri hien tai.
+- Lenh nay KHONG menu hoa. Ban set vi tri truoc bang `position ...`.
+- `go-args chung` ap dung cho ca Trang va Den.
+- `white ...` de override rieng cho engine Trang.
+- `black ...` de override rieng cho engine Den.
+- `plies N` dat gioi han so nua-nuoc toi da.
+
+Vi du:
+- Cung mot muc cho ca hai:
+  `position startpos`
+  `match depth 6 plies 40`
+
+- Trang nhanh hon Den:
+  `position startpos`
+  `match depth 8 white movetime 500 black movetime 1500 plies 60`
+
+- Dau tu mot vi tri giua tran:
+  `position startpos moves e2e4 e7e5 g1f3 b8c6`
+  `match depth 10 plies 30`
+
+Output cua match:
+- in ban co moi luot
+- in nuoc di cua moi ben
+- in score / depth / nodes / time
+- in FEN cuoi khi ket thuc
+
+
+7. Workflow khuyen nghi
+-----------------------
+Workflow co ban:
+1. `uci`
+2. `isready`
+3. `setoption ...` neu can
+4. `position ...`
+5. Mot trong cac lenh:
+   - `go ...`
+   - `perft ...`
+   - `play ...`
+   - `match ...`
+
+Workflow debug movegen:
+1. `position fen <FEN>`
+2. `d`
+3. `perft 4`
+
+Workflow test engine:
+1. `position startpos`
+2. `go depth 10`
+3. `play white depth 8`
+4. `match depth 8 plies 40`
+
+
+8. Ghi chu thiet ke
+-------------------
+- `position` la nguon chan ly cho vi tri hien tai.
+- `play` va `match` khong tu quan ly FEN rieng; chung dung state hien tai cua shell.
+- `perft` hien tai uu tien output divide/day du thay vi chi in tong nodes.
+- `go perft N` va `perft N` deu hop le trong shell nay.
+
+
+9. Vi du tong hop
+-----------------
+- Khoi dong, reset, search:
+  `ucinewgame`
+  `position startpos`
+  `go depth 8`
+
+- Perft tu mot FEN:
+  `position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 10`
+  `perft 4`
+
+- Choi voi engine:
+  `position startpos`
+  `play black movetime 1000`
+
+- Cho hai engine tu dau:
+  `position startpos moves d2d4 d7d5 c2c4`
+  `match depth 8 plies 50`

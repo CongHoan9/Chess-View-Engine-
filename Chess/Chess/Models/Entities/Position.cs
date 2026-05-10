@@ -27,21 +27,21 @@
     //            }
     //        }
     //    }
-    //    public static bool operator ==(Position position, Position other)
+    //    public static bool operator ==(ref Position position, Position other)
     //    {
     //        return position != null && other != null && position.Row == other.Row & position.Column == other.Column;
     //    }
-    //    public static bool operator !=(Position position, Position other)
+    //    public static bool operator !=(ref Position position, Position other)
     //    {
-    //        return !(position == other);
+    //        return !(ref Position == other);
     //    }
-    //    public static bool operator <(Position position, Position other)
+    //    public static bool operator <(ref Position position, Position other)
     //    {
-    //        return (position.Row < other.Row) && (position.Column < other.Column);
+    //        return (ref Position.Row < other.Row) && (ref Position.Column < other.Column);
     //    }
-    //    public static bool operator >(Position position, Position other)
+    //    public static bool operator >(ref Position position, Position other)
     //    {
-    //        return (position.Row > other.Row) && (position.Column > other.Column);
+    //        return (ref Position.Row > other.Row) && (ref Position.Column > other.Column);
     //    }
     //    public override string ToString()
     //    {

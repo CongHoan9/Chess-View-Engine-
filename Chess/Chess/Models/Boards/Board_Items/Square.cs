@@ -1,6 +1,6 @@
 ﻿namespace Chess
 {
-    //public class Square(Position position, Piece piece) : Cell(position)
+    //public class Square(ref Position position, Piece piece) : Cell(ref Position)
     //{
     //    public virtual Piece Piece
     //    {

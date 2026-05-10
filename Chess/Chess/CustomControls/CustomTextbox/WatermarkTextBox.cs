@@ -7,7 +7,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
-
 namespace Chess
 {
     public class WatermarkTextBox : TextBox, INotifyPropertyChanged
@@ -18,8 +17,8 @@ namespace Chess
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         public static readonly DependencyProperty WatermarkTextProperty = DependencyProperty.Register(nameof(WatermarkText), typeof(string), typeof(WatermarkTextBox), new("Search"));
-        public static readonly DependencyProperty InputColorProperty = DependencyProperty.Register(nameof(InputColor), typeof(SolidColorBrush), typeof(WatermarkTextBox), new(new SolidColorBrush(Color.FromRgb(48, 48, 48))));
-        public static readonly DependencyProperty WatermarkColorProperty = DependencyProperty.Register(nameof(WatermarkColor), typeof(SolidColorBrush), typeof(WatermarkTextBox), new(new SolidColorBrush(Color.FromRgb(128, 128, 128))));
+        public static readonly DependencyProperty InputColorProperty = DependencyProperty.Register(nameof(InputColor), typeof(SolidColorBrush), typeof(WatermarkTextBox), new(new SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 48, 48))));
+        public static readonly DependencyProperty WatermarkColorProperty = DependencyProperty.Register(nameof(WatermarkColor), typeof(SolidColorBrush), typeof(WatermarkTextBox), new(new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 128, 128))));
         public static readonly DependencyProperty NewFontWeightProperty = DependencyProperty.Register(nameof(NewFontWeight), typeof(FontWeight), typeof(WatermarkTextBox), new(default));
         public string WatermarkText
         {

@@ -93,7 +93,7 @@ namespace Chess
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Up<C> : IDirection where C : struct, IColor
+    public readonly struct Pawn_Up<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
     {
         public static Direction Offset => C.Up;
         public static Bitboard Mask => ulong.MaxValue;
@@ -104,7 +104,7 @@ namespace Chess
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Up_Left<C> : IDirection where C : struct, IColor
+    public readonly struct Pawn_Up_Left<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
     {
         public static Direction Offset => C.UpLeft;
         public static Bitboard Mask => ulong.MaxValue;
@@ -115,7 +115,7 @@ namespace Chess
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Up_Right<C> : IDirection where C : struct, IColor
+    public readonly struct Pawn_Up_Right<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
     {
         public static Direction Offset => C.UpRight;
         public static Bitboard Mask => ulong.MaxValue;
@@ -126,7 +126,7 @@ namespace Chess
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Double_Up<C> : IDirection where C : struct, IColor
+    public readonly struct Pawn_Double_Up<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
     {
         public static Direction Offset => C.Double;
         public static Bitboard Mask => ulong.MaxValue;

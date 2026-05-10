@@ -7,9 +7,9 @@ namespace Chess
     using Key = UInt64;
     public static class Zobrist
     {
-        public static Key[][] Psq { get; } = [.. Enumerable.Range(0, (int)PIECE_NB).Select(_ => new Key[(int)SQ_NB])];
-        public static Key[] EnPassant { get; } = new Key[(int)FILE_NB];
-        public static Key[] Castling { get; } = new Key[(int)CASTLING_RIGHT_NB];
+        public static Psq Psq { get; } = new();
+        public static EnPassant EnPassant { get; } = new();
+        public static Castling Castling { get; } = new();
         public static Key Side { get; set; }
         public static Key NoPawns { get; set; }
         static Zobrist()
@@ -19,7 +19,7 @@ namespace Chess
             {
                 for (Square sq = 0; sq < SQ_NB; sq++)
                 {
-                    Psq[(int)pc][(int)sq] = rng.Rand64();
+                    Psq[(int)pc, (int)sq] = rng.Rand64();
                 }    
             }
             for (File f = 0; f < FILE_NB; f++)

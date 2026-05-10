@@ -53,28 +53,4 @@ namespace Chess
             return data;
         }
     }
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DirtyThreats
-    {
-        public DirtyThreatList List;
-        public Color Us;
-        public Square PrevKsq, Ksq;
-        public Bitboard ThreatenedSqs, ThreateningSqs;
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DirtyThreatList
-    {
-        private ValueList Raw;
-        private int count;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Push_Back(DirtyThreat t)
-        {
-            Raw[count++] = t;
-        }
-    }
-    [InlineArray(96)]
-    public struct ValueList
-    {
-        public DirtyThreat Raw;
-    }
 }

@@ -1,4 +1,5 @@
-﻿namespace Chess
+﻿using static Chess.PieceType;
+namespace Chess
 {
     public interface IPieceType
     {
@@ -6,7 +7,7 @@
     }
     public interface IPieceTypes
     {
-        public static abstract Bitboard Get(Bitboard[] bb);
+        public static abstract Bitboard Get(ref ByTypeBB bb);
     }
     public enum PieceType : int
     {
@@ -17,14 +18,14 @@
         ROOK, 
         QUEEN, 
         KING,
-        ALL_PIECES,
+        ALL_PIECES = 0,
         PIECE_TYPE_NB = 8,
     }
     public enum Piece : int
     {
         NO_PIECE,
-        W_PAWN = 1, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
-        B_PAWN = 9, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING,
+        W_PAWN = PAWN    , W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
+        B_PAWN = PAWN + 8, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING,
         PIECE_NB = 16,
     }
 }

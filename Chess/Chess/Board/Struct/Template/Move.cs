@@ -12,14 +12,5 @@ namespace Chess
     {
         public static MoveType Type => PROMOTION;
     }
-    [StructLayout(LayoutKind.Sequential)]
-    public readonly struct EnPassant : IMoveType
-    {
-        public static MoveType Type => EN_PASSANT;
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Castling : IMoveType
-    {
-        public static MoveType Type => CASTLING;
-    }
+    // EnPassant and Castling are defined in their respective files due to their unique data structures Chess/Board/Struct/InlineArray/Zobrist.
 }

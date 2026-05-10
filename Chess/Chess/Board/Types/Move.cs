@@ -4,9 +4,9 @@
     {
         static abstract MoveType Type { get; }
     }
-    public enum MoveType
+    public enum MoveType : int
     {
-        NORMAL = 0,
+        NORMAL,
         PROMOTION = 1 << 14,
         EN_PASSANT = 2 << 14,
         CASTLING = 3 << 14

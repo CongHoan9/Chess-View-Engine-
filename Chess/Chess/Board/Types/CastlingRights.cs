@@ -1,12 +1,12 @@
 ﻿namespace Chess
 {
-    public enum CastlingRights : int
+    public enum CastlingRights : uint
     {
         NO_CASTLING = 0,
-        WHITE_OO = 1 << 0,
-        WHITE_OOO = 1 << 1,
-        BLACK_OO = 1 << 2,
-        BLACK_OOO = 1 << 3,
+        WHITE_OO,
+        WHITE_OOO = WHITE_OO << 1,
+        BLACK_OO = WHITE_OO << 2,
+        BLACK_OOO = WHITE_OO << 3,
         KING_SIDE = WHITE_OO | BLACK_OO,
         QUEEN_SIDE = WHITE_OOO | BLACK_OOO,
         WHITE_CASLING = WHITE_OO | WHITE_OOO,

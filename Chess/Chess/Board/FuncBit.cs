@@ -1,10 +1,10 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using static Chess.Bitboards;
 using static Chess.PieceType;
 using static Chess.Direction;
 using static Chess.Square;
 using static Chess.Color;
-using static Chess.Bitboards;
 namespace Chess
 {
     using Key = UInt64;
@@ -31,40 +31,14 @@ namespace Chess
             return File_BB(File_Of(s));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Shift(Bitboard b, Direction d)
-        {
-            return d == NORTH ? b << 8
-                 : d == SOUTH ? b >> 8
-                 : d == (int)NORTH + NORTH ? b << 16
-                 : d == (int)SOUTH + SOUTH ? b >> 16
-                 : d == EAST ? (b & ~File_HBB) << 1
-                 : d == WEST ? (b & ~File_ABB) >> 1
-                 : d == NORTH_EAST ? (b & ~File_HBB) << 9
-                 : d == NORTH_WEST ? (b & ~File_ABB) << 7
-                 : d == SOUTH_EAST ? (b & ~File_HBB) >> 7
-                 : d == SOUTH_WEST ? (b & ~File_ABB) >> 9
-                                   : 0;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool More_Than_One(Bitboard b)
         {
             return (b & (b - 1)) != 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Pawn_Attacks_BB<C>(Bitboard b) where C : struct, IColor
+        public static Bitboard Pawn_Attacks_BB<C, N>(Bitboard b) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
         {
-            return Shift<Pawn_Up_Left<C>>(b) | Shift<Pawn_Up_Right<C>>(b);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Pawn_Attacks_BB<C>(Square s) where C : struct, IColor
-        {
-            Bitboard b = Square_BB(s);
-            return Pawn_Attacks_BB<C>(b);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Pawn_Attacks_BB(Color c, Bitboard b)
-        {
-            return c == WHITE ? Shift(b, NORTH_WEST) | Shift(b, NORTH_EAST) : Shift(b, SOUTH_WEST) | Shift(b, SOUTH_EAST);
+            return Shift<Pawn_Up_Left<C, N>>(b) | Shift<Pawn_Up_Right<C, N>>(b);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Square Lsb(Bitboard b)
@@ -113,6 +87,12 @@ namespace Chess
         {
             return (Piece)(((int)c << 3) + pt);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Piece Make_Piece<T>(Color c) where T : struct, IPieceType
+        {
+            return (Piece)(((int)c << 3) + T.Type);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Square Make_Square(File f, Rank r)
         {

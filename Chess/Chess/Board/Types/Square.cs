@@ -1,4 +1,5 @@
-﻿namespace Chess
+﻿#pragma warning disable CA1069 
+namespace Chess
 {
     public enum Square : int
     {

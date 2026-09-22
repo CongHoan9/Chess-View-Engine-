@@ -2,7 +2,7 @@
 {
     public interface IMoveType
     {
-        static abstract MoveType Type { get; }
+        public static abstract MoveType Type { get; }
     }
     public enum MoveType : int
     {

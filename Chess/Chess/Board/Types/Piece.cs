@@ -1,4 +1,5 @@
-﻿using static Chess.PieceType;
+﻿#pragma warning disable CA1069 
+using static Chess.PieceType;
 namespace Chess
 {
     public interface IPieceType

@@ -10,6 +10,6 @@
         RANK_6,
         RANK_7,
         RANK_8,
-        RANK_NB
+        RANK_NB = 8,
     }
 }

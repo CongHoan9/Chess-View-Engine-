@@ -6,21 +6,21 @@ using static Chess.Types;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
-    unsafe public ref struct MoveList<T, C, N> where T : struct, IGenType where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+    unsafe public ref struct MoveList<T, Us, Next> where T : struct, IGenType where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
     {
         private MoveList_Data Raw;
-        private readonly long Count;
+        private readonly ulong Count;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MoveList(ref Position pos)
         {
             fixed (Move* ptr = &Raw[0])
             {
-                Move* end = T.Type == LEGAL ? Generate_Legal<C, N>(ref pos, ptr) : Generate<T, C, N>(ref pos, ptr);
-                Count = end - ptr;
+                Move* end = T.Type == LEGAL ? Generate_Legal<Us, Next>(ref pos, ptr) : Generate<T, Us, Next>(ref pos, ptr);
+                Count = (ulong)(end - ptr);
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly long Size()
+        public readonly ulong Size()
         {
             return Count;
         }

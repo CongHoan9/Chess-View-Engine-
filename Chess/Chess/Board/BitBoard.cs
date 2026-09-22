@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 using static Chess.Color;
 using static Chess.FuncBit;
 using static Chess.PieceType;
@@ -34,7 +35,7 @@ namespace Chess
         public static readonly Magics Magics;
         public static readonly RookTable RookTable;
         public static readonly BishopTable BishopTable;
-        public static readonly PseudoAttacks PseudoAttacks;    
+        public static readonly PseudoAttacks PseudoAttacks;  
         static Bitboards()
         {
             for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
@@ -48,7 +49,7 @@ namespace Chess
             Init_Magics<Bishop>((Bitboard*)Unsafe.AsPointer(ref Unsafe.AsRef(in BishopTable[0])), Magics);
             for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
             {
-                fixed (PieceType* sliderStart = &Types.Slider[0])
+                fixed (PieceType* sliderStart = &Slider[0])
                 {
                     for (PieceType* slider = sliderStart, sliderEnd = sliderStart + PieceTypeArray2.Length; slider != sliderEnd; ++slider)
                     {
@@ -68,7 +69,7 @@ namespace Chess
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void Init_Magics<T>(Bitboard* table, Magics magics) where T : struct, IPieceType
+        private static void Init_Magics<PieceType>(Bitboard* table, Magics magics) where PieceType : struct, IPieceType
         {
             Bitboard[] occupancy = new Bitboard[4096];
             Bitboard[] reference = new Bitboard[4096];
@@ -78,38 +79,49 @@ namespace Chess
             for (Square s = SQ_A1; s <= SQ_H8; ++s)
             {
                 Bitboard edges = ((Rank_1BB | Rank_8BB) & ~Rank_BB(s)) | ((File_ABB | File_HBB) & ~File_BB(s));
-                ref Magic m = ref magics[(int)s, T.Type - BISHOP];
-                m.mask = Sliding_Attack<T>(s, 0) & ~edges;
+                ref Magic m = ref magics[(int)s, PieceType.Type - BISHOP];
+                m.mask = Sliding_Attack<PieceType>(s, 0) & ~edges;
                 m.Shift = 64 - BitOperations.PopCount(m.mask);
-                m.attacks = s == SQ_A1 ? table : magics[(int)s - 1, T.Type - BISHOP].attacks + size;
+                m.attacks = s == SQ_A1 ? table : magics[(int)s - 1, PieceType.Type - BISHOP].attacks + size;
                 size = 0;
                 Bitboard b = 0;
                 do
                 {
                     occupancy[size] = b;
-                    reference[size] = Sliding_Attack<T>(s, b);
+                    reference[size] = Sliding_Attack<PieceType>(s, b);
                     size++;
                     b = (b - m.mask) & m.mask;
                 }
                 while (b != 0);
-                PRNG rng = new((ulong)Seed_Of(Rank_Of(s)));
-                for (int i = 0; i < size;)
+                if (Bmi2.X64.IsSupported)
                 {
-                    for (m.magic = 0; BitOperations.PopCount((m.magic * m.mask) >> 56) < 6;)
+                    for (int i = 0; i < size; ++i)
                     {
-                        m.magic = rng.Sparse_Rand<Bitboard>();
+                        int idx = (int)Bmi2.X64.ParallelBitExtract(occupancy[i].Raw, m.mask.Raw);
+                        m.attacks[idx] = reference[i];
                     }
-                    for (++cnt, i = 0; i < size; ++i)
+                }
+                else
+                {
+                    PRNG rng = new((ulong)Seed_Of(Rank_Of(s)));
+                    for (int i = 0; i < size;)
                     {
-                        int idx = m.Index(occupancy[i]);
-                        if (epoch[idx] < cnt)
+                        for (m.magic = 0; BitOperations.PopCount((m.magic * m.mask) >> 56) < 6;)
                         {
-                            epoch[idx] = cnt;
-                            m.attacks[idx] = reference[i];
+                            m.magic = rng.Sparse_Rand<Bitboard>();
                         }
-                        else if (m.attacks[idx] != reference[i])
+                        for (++cnt, i = 0; i < size; ++i)
                         {
-                            break;
+                            int idx = m.Index(occupancy[i]);
+                            if (epoch[idx] < cnt)
+                            {
+                                epoch[idx] = cnt;
+                                m.attacks[idx] = reference[i];
+                            }
+                            else if (m.attacks[idx] != reference[i])
+                            {
+                                break;
+                            }
                         }
                     }
                 }
@@ -122,11 +134,10 @@ namespace Chess
             return IsOk(to) && File_Distance(s, to) <= 2 ? Square_BB(to) : 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Bitboard Sliding_Attack<T>(Square sq, Bitboard occupied) where T : struct, IPieceType
+        private static Bitboard Sliding_Attack<PieceType>(Square sq, Bitboard occupied) where PieceType : struct, IPieceType
         {
             Bitboard attacks = 0;
-
-            if (T.Type == ROOK)
+            if (PieceType.Type == ROOK)
             {
                 fixed (Direction* directionStart = &RookDirections[0])
                 {
@@ -193,11 +204,11 @@ namespace Chess
             return b;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Pseudo_Attacks<T>(Square sq) where T : struct, IPieceType
+        public static Bitboard Pseudo_Attacks<PieceType>(Square sq) where PieceType : struct, IPieceType
         {
-            return T.Type switch
+            return PieceType.Type switch
             {
-                ROOK or BISHOP => Sliding_Attack<T>(sq, 0),
+                ROOK or BISHOP => Sliding_Attack<PieceType>(sq, 0),
                 QUEEN => Sliding_Attack<Rook>(sq, 0) | Sliding_Attack<Bishop>(sq, 0),
                 KNIGHT => Knight_Attack(sq),
                 KING => King_Attack(sq),
@@ -205,18 +216,18 @@ namespace Chess
             };
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Attacks_BB<P>(Square s, Color c = COLOR_NB) where P : struct, IPieceType
+        public static Bitboard Attacks_BB<PieceType>(Square s, Color c = COLOR_NB) where PieceType : struct, IPieceType
         {
-            return P.Type == PAWN ? PseudoAttacks[(int)c, (int)s] : PseudoAttacks[(int)P.Type, (int)s];
+            return PieceType.Type == PAWN ? PseudoAttacks[(int)c, (int)s] : PseudoAttacks[(int)PieceType.Type, (int)s];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Attacks_BB<P>(Square s, Bitboard occupied) where P : struct, IPieceType, IPieceTypes
+        public static Bitboard Attacks_BB<PieceType>(Square s, Bitboard occupied) where PieceType : struct, IPieceType, IPieceTypes
         {
-            return P.Type switch
+            return PieceType.Type switch
             {
-                BISHOP or ROOK => Magics[(int)s, P.Type - BISHOP].Attacks_BB(occupied),
+                BISHOP or ROOK => Magics[(int)s, PieceType.Type - BISHOP].Attacks_BB(occupied),
                 QUEEN => Attacks_BB<Bishop>(s, occupied) | Attacks_BB<Rook>(s, occupied),
-                _ => PseudoAttacks[(int)P.Type, (int)s],
+                _ => PseudoAttacks[(int)PieceType.Type, (int)s],
             };
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

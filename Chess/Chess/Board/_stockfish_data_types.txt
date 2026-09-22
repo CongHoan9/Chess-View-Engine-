@@ -1,0 +1,384 @@
+// types.h
+struct DirtyPiece {
+    public:
+    Piece  pc;
+    Square from, to;
+    Square remove_sq, add_sq;
+    Piece  remove_pc, add_pc;
+};
+
+struct DirtyThreat {
+    public:
+    static constexpr int PcSqOffset         = 0;
+    static constexpr int ThreatenedSqOffset = 8;
+    static constexpr int ThreatenedPcOffset = 16;
+    static constexpr int PcOffset           = 20;
+
+    private:
+    uint32_t data;
+};
+
+struct DirtyThreats {
+    public:
+    DirtyThreatList list;
+    Color           us;
+    Square          prevKsq, ksq;
+    Bitboard        threatenedSqs, threateningSqs;
+};
+
+class Move {
+    public:
+    struct MoveHash;
+
+    protected:
+    std::uint16_t data;
+};
+
+// position.h
+struct StateInfo {
+    public:
+    Key    materialKey;
+    Key    pawnKey;
+    Key    minorPieceKey;
+    Key    nonPawnKey[COLOR_NB];
+    Value  nonPawnMaterial[COLOR_NB];
+    int    castlingRights;
+    int    rule50;
+    int    pliesFromNull;
+    Square epSquare;
+    Key        key;
+    Bitboard   checkersBB;
+    StateInfo* previous;
+    Bitboard   blockersForKing[COLOR_NB];
+    Bitboard   pinners[COLOR_NB];
+    Bitboard   checkSquares[PIECE_TYPE_NB];
+    Piece      capturedPiece;
+    int        repetition;
+};
+
+class Position {
+    private:
+    std::array<Piece, SQUARE_NB>        board;
+    std::array<Bitboard, PIECE_TYPE_NB> byTypeBB;
+    std::array<Bitboard, COLOR_NB>      byColorBB;
+    int          pieceCount[PIECE_NB];
+    int          castlingRightsMask[SQUARE_NB];
+    Square       castlingRookSquare[CASTLING_RIGHT_NB];
+    Bitboard     castlingPath[CASTLING_RIGHT_NB];
+    StateInfo*   st;
+    int          gamePly;
+    Color        sideToMove;
+    bool         chess960;
+    DirtyPiece   scratch_dp;
+    DirtyThreats scratch_dts;
+};
+
+// search.h
+struct Stack {
+    public:
+    Move*                       pv;
+    PieceToHistory*             continuationHistory;
+    CorrectionHistory<PieceTo>* continuationCorrectionHistory;
+    int                         ply;
+    Move                        currentMove;
+    Move                        excludedMove;
+    Value                       staticEval;
+    int                         statScore;
+    int                         moveCount;
+    bool                        inCheck;
+    bool                        ttPv;
+    bool                        ttHit;
+    int                         cutoffCnt;
+    int                         reduction;
+};
+
+struct RootMove {
+    public:
+    uint64_t          effort;
+    Value             score;
+    Value             previousScore;
+    Value             averageScore;
+    Value             meanSquaredScore;
+    Value             uciScore;
+    bool              scoreLowerbound;
+    bool              scoreUpperbound;
+    int               selDepth;
+    int               tbRank;
+    Value             tbScore;
+    std::vector<Move> pv;
+};
+
+struct LimitsType {
+    public:
+    std::vector<std::string> searchmoves;
+    TimePoint                time[COLOR_NB], inc[COLOR_NB], npmsec, movetime, startTime;
+    int                      movestogo, depth, mate, perft, infinite;
+    uint64_t                 nodes;
+    bool                     ponderMode;
+};
+
+struct SharedState {
+    public:
+    const OptionsMap&                                         options;
+    ThreadPool&                                               threads;
+    TranspositionTable&                                       tt;
+    std::map<NumaIndex, SharedHistories>&                     sharedHistories;
+    const LazyNumaReplicatedSystemWide<Eval::NNUE::Networks>& networks;
+};
+
+struct InfoShort {
+    public:
+    int   depth;
+    Score score;
+};
+
+struct InfoFull {
+    public:
+    int              selDepth;
+    size_t           multiPV;
+    std::string_view wdl;
+    std::string_view bound;
+    size_t           timeMs;
+    size_t           nodes;
+    size_t           nps;
+    size_t           tbHits;
+    std::string_view pv;
+    int              hashfull;
+};
+
+struct InfoIteration {
+    public:
+    int              depth;
+    std::string_view currmove;
+    size_t           currmovenumber;
+};
+
+struct Skill {
+    public:
+    constexpr static int LowestElo  = 1320;
+    constexpr static int HighestElo = 3190;
+    double level;
+    Move   best;
+};
+
+class SearchManager {
+    public:
+    struct UpdateContext;
+    Stockfish::TimeManagement tm;
+    double                    originalTimeAdjust;
+    int                       callsCnt;
+    std::atomic_bool          ponder;
+    std::array<Value, 4>      iterValue;
+    double                    previousTimeReduction;
+    Value                     bestPreviousScore;
+    Value                     bestPreviousAverageScore;
+    bool                      stopOnPonderhit;
+    size_t                    id;
+    const UpdateContext&      updates;
+};
+
+class Worker {
+    public:
+    ButterflyHistory mainHistory;
+    LowPlyHistory    lowPlyHistory;
+    CapturePieceToHistory           captureHistory;
+    ContinuationHistory             continuationHistory[2][2];
+    CorrectionHistory<Continuation> continuationCorrectionHistory;
+    TTMoveHistory    ttMoveHistory;
+    SharedHistories& sharedHistory;
+
+    private:
+    LimitsType            limits;
+    size_t                pvIdx, pvLast;
+    std::atomic<uint64_t> nodes, tbHits, bestMoveChanges;
+    int                   selDepth, nmpMinPly;
+    Value                 optimism[COLOR_NB];
+    Position              rootPos;
+    StateInfo             rootState;
+    RootMoves             rootMoves;
+    Depth                 rootDepth, completedDepth;
+    Value                 rootDelta;
+    size_t                threadIdx, numaThreadIdx, numaTotal;
+    NumaReplicatedAccessToken numaAccessToken;
+    std::array<int, MAX_MOVES> reductions;
+    std::unique_ptr<ISearchManager> manager;
+    Tablebases::Config    tbConfig;
+    const OptionsMap&     options;
+    ThreadPool&           threads;
+    TranspositionTable&   tt;
+    const LazyNumaReplicatedSystemWide<Eval::NNUE::Networks>& networks;
+    Eval::NNUE::AccumulatorStack  accumulatorStack;
+    Eval::NNUE::AccumulatorCaches refreshTable;
+};
+
+struct ConthistBonus {
+    public:
+    int index;
+    int weight;
+};
+
+// tt.h
+struct TTData {
+    public:
+    Move  move;
+    Value value, eval;
+    Depth depth;
+    Bound bound;
+    bool  is_pv;
+};
+
+class TranspositionTable {
+    private:
+    size_t   clusterCount;
+    Cluster* table;
+    uint8_t  generation8;
+};
+
+// tt.cpp
+struct TTEntry {
+    private:
+    uint16_t key16;
+    uint8_t  depth8;
+    uint8_t  genBound8;
+    Move     move16;
+    int16_t  value16;
+    int16_t  eval16;
+};
+
+struct Cluster {
+    public:
+    TTEntry entry[3]; // ClusterSize = 3
+    char    padding[2];
+};
+
+// movepick.h
+class MovePicker {
+    private:
+    const Position&              pos;
+    const ButterflyHistory*      mainHistory;
+    const LowPlyHistory*         lowPlyHistory;
+    const CapturePieceToHistory* captureHistory;
+    const PieceToHistory**       continuationHistory;
+    const SharedHistories*       sharedHistory;
+    Move                         ttMove;
+    ExtMove *                    cur, *endCur, *endBadCaptures, *endCaptures, *endGenerated;
+    int                          stage;
+    int                          threshold;
+    Depth                        depth;
+    int                          ply;
+    bool                         skipQuiets;
+    ExtMove                      moves[MAX_MOVES];
+};
+
+// bitboard.h
+struct Magic {
+    public:
+    Bitboard  mask;
+    Bitboard* attacks;
+    Bitboard  magic;
+    unsigned  shift;
+};
+
+// history.h
+template<typename T, int D, bool Atomic = false>
+struct StatsEntry {
+    private:
+    std::conditional_t<Atomic, std::atomic<T>, T> entry;
+};
+
+struct CorrectionBundle {
+    public:
+    StatsEntry<T, D, true> pawn;
+    StatsEntry<T, D, true> minor;
+    StatsEntry<T, D, true> nonPawnWhite;
+    StatsEntry<T, D, true> nonPawnBlack;
+};
+
+struct SharedHistories {
+    public:
+    UnifiedCorrectionHistory correctionHistory;
+    PawnHistory              pawnHistory;
+
+    private:
+    size_t sizeMinus1, pawnHistSizeMinus1;
+};
+
+// ucioption.h
+class Option {
+    private:
+    std::string       defaultValue, currentValue, type;
+    int               min, max;
+    size_t            idx;
+    OnChange          on_change;
+    const OptionsMap* parent;
+};
+
+class OptionsMap {
+    private:
+    using OptionsStore = std::map<std::string, Option, CaseInsensitiveLess>;
+    OptionsStore options_map;
+    InfoListener info;
+};
+
+// thread.h
+class Thread {
+    public:
+    LargePagePtr<Search::Worker> worker;
+    std::function<void()>        jobFunc;
+
+    private:
+    std::mutex                mutex;
+    std::condition_variable   cv;
+    size_t                    idx, idxInNuma, totalNuma, nthreads;
+    bool                      exit, searching;
+    NativeThread              stdThread;
+    NumaReplicatedAccessToken numaAccessToken;
+};
+
+class ThreadPool {
+    public:
+    std::atomic_bool stop, increaseDepth;
+
+    private:
+    StateListPtr                         setupStates;
+    std::vector<std::unique_ptr<Thread>> threads;
+    std::vector<NumaIndex>               boundThreadToNumaNode;
+};
+
+// nnue/nnue_accumulator.h
+template<IndexType Size>
+struct Accumulator {
+    public:
+    std::array<std::array<std::int16_t, Size>, COLOR_NB>        accumulation;
+    std::array<std::array<std::int32_t, PSQTBuckets>, COLOR_NB> psqtAccumulation;
+    std::array<bool, COLOR_NB>                                  computed;
+};
+
+struct Entry { // inside Cache
+    public:
+    std::array<BiasType, Size>              accumulation;
+    std::array<PSQTWeightType, PSQTBuckets> psqtAccumulation;
+    std::array<Piece, SQUARE_NB>            pieces;
+    Bitboard                                pieceBB;
+};
+
+struct AccumulatorCaches {
+    public:
+    Cache<TransformedFeatureDimensionsBig>   big;
+    Cache<TransformedFeatureDimensionsSmall> small;
+};
+
+template<typename FeatureSet>
+struct AccumulatorState {
+    public:
+    Accumulator<TransformedFeatureDimensionsBig>   accumulatorBig;
+    Accumulator<TransformedFeatureDimensionsSmall> accumulatorSmall;
+    typename FeatureSet::DiffType                  diff;
+};
+
+class AccumulatorStack {
+    private:
+    std::array<AccumulatorState<PSQFeatureSet>, MaxSize>    psq_accumulators;
+    std::array<AccumulatorState<ThreatFeatureSet>, MaxSize> threat_accumulators;
+    std::size_t                                             size;
+};

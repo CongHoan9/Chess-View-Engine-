@@ -1,26 +1,27 @@
 ﻿using System.Runtime.CompilerServices;
-using static Chess.MoveType;
-using static Chess.GenType;
-using static Chess.Square;
-using static Chess.Color;
+using System.Runtime.Intrinsics.X86;
 using static Chess.Bitboards;
 using static Chess.FuncBit;
+using static Chess.GenType;
+using static Chess.MoveType;
+using static Chess.Square;
+
 namespace Chess
 {
     public static class MoveGen
     {
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static unsafe Move* Splat_Pawn_Moves<O>(Move* moveList, Bitboard toBB) where O : struct, IDirection
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe Move* Splat_Pawn_Moves<Direction>(Move* moveList, Bitboard toBB) where Direction : struct, IDirection
         {
             while (toBB != 0)
             {
                 Square to = Pop_Lsb(ref toBB);
-                Square from = to - (int)O.Offset;
+                Square from = to - (int)Direction.Offset;
                 *moveList++ = new Move(from, to);
             }
             return moveList;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe Move* Splat_Moves(Move* moveList, Square from, Bitboard toBB)
         {
             while (toBB != 0)
@@ -29,16 +30,16 @@ namespace Chess
             }    
             return moveList;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private static unsafe Move* Make_Promotions<T, O, B>(Move* moveList, Square to) where T : struct, IGenType where O : struct, IDirection where B : struct, IBool
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe Move* Make_Promotions<GenType, Direction, Bool>(Move* moveList, Square to) where GenType : struct, IGenType where Direction : struct, IDirection where Bool : struct, IBool
         {
-            Square from = to - (int)O.Offset;
-            bool all = T.Type == EVASION || T.Type == NON_EVASION;
-            if (T.Type == CAPTURE || all)
+            Square from = to - (int)Direction.Offset;
+            bool all = GenType.Type == EVASION || GenType.Type == NON_EVASION;
+            if (GenType.Type == CAPTURE || all)
             {
                 *moveList++ = Move.Make_Move<Promotion, Queen>(from, to);
             }
-            if ((T.Type == CAPTURE && B.Value) || (T.Type == QUIET && B.Value) || all)
+            if ((GenType.Type == CAPTURE && Bool.Value) || (GenType.Type == QUIET && Bool.Value) || all)
             {
                 *moveList++ = Move.Make_Move<Promotion, Rook>(from, to);
                 *moveList++ = Move.Make_Move<Promotion, Bishop>(from, to);
@@ -47,59 +48,59 @@ namespace Chess
             return moveList;
         }
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private static unsafe Move* Generate_Pawn_Moves<G, C, N>(ref Position pos, Move* moveList, Bitboard target) where G : struct, IGenType where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        private static unsafe Move* Generate_Pawn_Moves<GenType, Us, Next>(ref Position pos, Move* moveList, Bitboard target) where GenType : struct, IGenType where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
             Bitboard emptySquares = ~pos.Get_Pieces();
-            Bitboard enemies = G.Enemies<C, N>(ref pos);
-            Bitboard Pawn_sOn7 = pos.Get_Pieces<Pawn>(C.Value) & C.Rank7;
-            Bitboard Pawn_sNotOn7 = pos.Get_Pieces<Pawn>(C.Value) & ~C.Rank7;
-            if (G.Type != CAPTURE)
+            Bitboard enemies = GenType.Enemies<Us, Next>(ref pos);
+            Bitboard Pawn_sOn7 = pos.Get_Pieces<Pawn>(Us.Value) & Us.Rank7;
+            Bitboard Pawn_sNotOn7 = Bmi1.X64.IsSupported ? (Bitboard)Bmi1.X64.AndNot(Us.Rank7.Raw, pos.Get_Pieces<Pawn>(Us.Value).Raw) : pos.Get_Pieces<Pawn>(Us.Value) & ~Us.Rank7;
+            if (GenType.Type != CAPTURE)
             {
-                Bitboard b1 = Shift<Pawn_Up<C, N>>(Pawn_sNotOn7) & emptySquares;
-                Bitboard b2 = Shift<Pawn_Up<C, N>>(b1 & C.Rank3) & emptySquares;
-                if (G.Type == EVASION)
+                Bitboard b1 = Shift<Pawn_Up<Us, Next>>(Pawn_sNotOn7) & emptySquares;
+                Bitboard b2 = Shift<Pawn_Up<Us, Next>>(b1 & Us.Rank3) & emptySquares;
+                if (GenType.Type == EVASION)
                 {
                     b1 &= target;
                     b2 &= target;
                 }
-                moveList = Splat_Pawn_Moves<Pawn_Up<C, N>>(moveList, b1);
-                moveList = Splat_Pawn_Moves<Pawn_Double_Up<C, N>>(moveList, b2);
+                moveList = Splat_Pawn_Moves<Pawn_Up<Us, Next>>(moveList, b1);
+                moveList = Splat_Pawn_Moves<Pawn_Double_Up<Us, Next>>(moveList, b2);
             }
             if (Pawn_sOn7 != 0)
             {
-                Bitboard b1 = Shift<Pawn_Up_Right<C, N>>(Pawn_sOn7) & enemies;
-                Bitboard b2 = Shift<Pawn_Up_Left<C, N>>(Pawn_sOn7) & enemies;
-                Bitboard b3 = Shift<Pawn_Up<C, N>>(Pawn_sOn7) & emptySquares;
-                if (G.Type == EVASION)
+                Bitboard b1 = Shift<Pawn_Up_Right<Us, Next>>(Pawn_sOn7) & enemies;
+                Bitboard b2 = Shift<Pawn_Up_Left<Us, Next>>(Pawn_sOn7) & enemies;
+                Bitboard b3 = Shift<Pawn_Up<Us, Next>>(Pawn_sOn7) & emptySquares;
+                if (GenType.Type == EVASION)
                 {
                     b3 &= target;
                 }
                 while (b1 != 0)
                 {
-                    moveList = Make_Promotions<G, Pawn_Up_Right<C, N>, True>(moveList, Pop_Lsb(ref b1));
+                    moveList = Make_Promotions<GenType, Pawn_Up_Right<Us, Next>, True>(moveList, Pop_Lsb(ref b1));
                 }    
                 while (b2 != 0)
                 {
-                    moveList = Make_Promotions<G, Pawn_Up_Left<C, N>, True>(moveList, Pop_Lsb(ref b2));
+                    moveList = Make_Promotions<GenType, Pawn_Up_Left<Us, Next>, True>(moveList, Pop_Lsb(ref b2));
                 }
                 while (b3 != 0)
                 {
-                    moveList = Make_Promotions<G, Pawn_Up<C, N>, False>(moveList, Pop_Lsb(ref b3));
+                    moveList = Make_Promotions<GenType, Pawn_Up<Us, Next>, False>(moveList, Pop_Lsb(ref b3));
                 }
             }
-            if (G.Type == CAPTURE || G.Type == EVASION || G.Type == NON_EVASION)
+            if (GenType.Type == CAPTURE || GenType.Type == EVASION || GenType.Type == NON_EVASION)
             {
-                Bitboard b1 = Shift<Pawn_Up_Right<C, N>>(Pawn_sNotOn7) & enemies;
-                Bitboard b2 = Shift<Pawn_Up_Left<C, N>>(Pawn_sNotOn7) & enemies;
-                moveList = Splat_Pawn_Moves<Pawn_Up_Right<C, N>>(moveList, b1);
-                moveList = Splat_Pawn_Moves<Pawn_Up_Left<C, N>>(moveList, b2);
+                Bitboard b1 = Shift<Pawn_Up_Right<Us, Next>>(Pawn_sNotOn7) & enemies;
+                Bitboard b2 = Shift<Pawn_Up_Left<Us, Next>>(Pawn_sNotOn7) & enemies;
+                moveList = Splat_Pawn_Moves<Pawn_Up_Right<Us, Next>>(moveList, b1);
+                moveList = Splat_Pawn_Moves<Pawn_Up_Left<Us, Next>>(moveList, b2);
                 if (pos.Ep_Square() != SQ_NONE)
                 {
-                    if (G.Type == EVASION && (target & (pos.Ep_Square() + (int)C.Up)) != 0)
+                    if (GenType.Type == EVASION && (target & (pos.Ep_Square() + (int)Us.Up)) != 0)
                     {
                         return moveList;
                     }
-                    b1 = Pawn_sNotOn7 & Attacks_BB<Pawn>(pos.Ep_Square(), N.Value);
+                    b1 = Pawn_sNotOn7 & Attacks_BB<Pawn>(pos.Ep_Square(), Next.Value);
                     while (b1 != 0)
                     {
                         *moveList++ = Move.Make_Move<EnPassant>(Pop_Lsb(ref b1), pos.Ep_Square());
@@ -108,42 +109,42 @@ namespace Chess
             }
             return moveList;   
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private static unsafe Move* Generate_Moves<P, C, N>(ref Position pos, Move* moveList, Bitboard target) where C : struct, IColor<C, N> where N : struct, IColor<N, C> where P : struct, IPieceType, IPieceTypes
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe Move* Generate_Moves<PieceType, Us, Next>(ref Position pos, Move* moveList, Bitboard target) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us> where PieceType : struct, IPieceType, IPieceTypes
         {
-            Bitboard bb = pos.Get_Pieces<P>(C.Value);
+            Bitboard bb = pos.Get_Pieces<PieceType>(Us.Value);
             while (bb != 0)
             {
                 Square from = Pop_Lsb(ref bb);
-                Bitboard b = Attacks_BB<P>(from, pos.Get_Pieces()) & target;
+                Bitboard b = Attacks_BB<PieceType>(from, pos.Get_Pieces()) & target;
                 moveList = Splat_Moves(moveList, from, b); 
             }
             return moveList;
         }
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private static unsafe Move* Generate_All<G, C, N>(ref Position pos, Move* moveList) where C : struct, IColor<C, N> where N : struct, IColor<N, C> where G : struct, IGenType
+        private static unsafe Move* Generate_All<GenType, Us, Next>(ref Position pos, Move* moveList) where GenType : struct, IGenType where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            Square ksq = pos.Get_Square<King>(C.Value);
+            Square ksq = pos.Get_Square<King>(Us.Value);
             Bitboard target = 0;
-            if (G.Type != EVASION || !More_Than_One(pos.Checkers()))
+            if (GenType.Type != EVASION || !More_Than_One(pos.Checkers()))
             {
-                target = G.Type == EVASION    ? Between_BB(ksq, Lsb(pos.Checkers()))
-                       : G.Type == NON_EVASION ? ~pos.Get_Pieces(C.Value)
-                       : G.Type == CAPTURE    ? pos.Get_Pieces(N.Value)
+                target = GenType.Type == EVASION    ? Between_BB(ksq, Lsb(pos.Checkers()))
+                       : GenType.Type == NON_EVASION ? ~pos.Get_Pieces(Us.Value)
+                       : GenType.Type == CAPTURE    ? pos.Get_Pieces(Next.Value)
                                                         : ~pos.Get_Pieces();
-                moveList = Generate_Pawn_Moves<G, C, N>(ref pos, moveList, target);
-                moveList = Generate_Moves<Knight, C, N>(ref pos, moveList, target);
-                moveList = Generate_Moves<Bishop, C, N>(ref pos, moveList, target);
-                moveList = Generate_Moves<Rook, C, N>(ref pos, moveList, target);
-                moveList = Generate_Moves<Queen, C, N>(ref pos, moveList, target);
+                moveList = Generate_Pawn_Moves<GenType, Us, Next>(ref pos, moveList, target);
+                moveList = Generate_Moves<Knight, Us, Next>(ref pos, moveList, target);
+                moveList = Generate_Moves<Bishop, Us, Next>(ref pos, moveList, target);
+                moveList = Generate_Moves<Rook, Us, Next>(ref pos, moveList, target);
+                moveList = Generate_Moves<Queen, Us, Next>(ref pos, moveList, target);
             }
-            Bitboard b = Attacks_BB<King>(ksq) & (G.Type == EVASION ? ~pos.Get_Pieces(C.Value) : target);
+            Bitboard b = Attacks_BB<King>(ksq) & (GenType.Type == EVASION ? ~pos.Get_Pieces(Us.Value) : target);
             moveList = Splat_Moves(moveList, ksq, b);
-            if ((G.Type == QUIET || G.Type == NON_EVASION) && pos.Can_Castle(C.CastlingRights))
+            if ((GenType.Type == QUIET || GenType.Type == NON_EVASION) && pos.Can_Castle(Us.CastlingRights))
             {
-                fixed (CastlingRights* crStart = &C.AllCastlingRights[0])
+                fixed (CastlingRights* crStart = &Us.AllCastlingRights[0])
                 {
-                    for (CastlingRights* crPtr = crStart, crEnd = crStart + CastlingRightsArray2.Length; crPtr != crEnd; ++crPtr)
+                    for (CastlingRights* crPtr = crStart, crEnd = crStart + AllCastlingRights.Length; crPtr != crEnd; ++crPtr)
                     {
                         CastlingRights cr = *crPtr;
                         if (!pos.Castling_Impeded(cr) && pos.Can_Castle(cr))
@@ -155,21 +156,21 @@ namespace Chess
             }
             return moveList;
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static unsafe Move* Generate<G, C, N>(ref Position pos, Move* moveList) where G : struct, IGenType where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe Move* Generate<GenType, Us, Next>(ref Position pos, Move* moveList) where GenType : struct, IGenType where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return Generate_All<G, C, N>(ref pos, moveList);
+            return Generate_All<GenType, Us, Next>(ref pos, moveList);
         }
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static unsafe Move* Generate_Legal<C, N>(ref Position pos, Move* moveList) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe Move* Generate_Legal<Us, Next>(ref Position pos, Move* moveList) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            Bitboard pinned = pos.Blockers_For_King(C.Value) & pos.Get_Pieces(C.Value);
-            Square ksq = pos.Get_Square<King>(C.Value);
+            Bitboard pinned = pos.Blockers_For_King(Us.Value) & pos.Get_Pieces(Us.Value);
+            Square ksq = pos.Get_Square<King>(Us.Value);
             Move* cur = moveList;
-            moveList = pos.Checkers() != 0 ? Generate<Evasions, C, N>(ref pos, moveList) : Generate<NON_EVASIONs, C, N>(ref pos, moveList);
+            moveList = pos.Checkers() != 0 ? Generate<Evasions, Us, Next>(ref pos, moveList) : Generate<Non_Evasions, Us, Next>(ref pos, moveList);
             while (cur != moveList)
             {
-                if (((pinned & cur->From_Sq()) != 0 || cur->From_Sq() == ksq || cur->Type_Of() == EN_PASSANT) && !pos.Legal<C, N>(*cur))
+                if (((pinned & cur->From_Sq()) != 0 || cur->From_Sq() == ksq || cur->Type_Of() == EN_PASSANT) && !pos.Legal<Us, Next>(*cur))
                 {
                     *cur = *(--moveList);
                 }

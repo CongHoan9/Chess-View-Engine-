@@ -5,15 +5,16 @@ using static Chess.PieceType;
 using static Chess.Direction;
 using static Chess.Square;
 using static Chess.Color;
+using System.Runtime.Intrinsics.X86;
 namespace Chess
 {
     using Key = UInt64;
     public static class FuncBit
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Shift<O>(Bitboard bb) where O : struct, IDirection
+        public static Bitboard Shift<Direction>(Bitboard bb) where Direction : struct, IDirection
         {
-            return O.Shift(bb);
+            return Direction.Shift(bb);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Square_BB(Square s)
@@ -33,12 +34,16 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool More_Than_One(Bitboard b)
         {
+            if (Bmi1.X64.IsSupported)
+            {
+                return Bmi1.X64.ResetLowestSetBit(b.Raw) != 0;
+            }
             return (b & (b - 1)) != 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Pawn_Attacks_BB<C, N>(Bitboard b) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Bitboard Pawn_Attacks_BB<Us, Next>(Bitboard b) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return Shift<Pawn_Up_Left<C, N>>(b) | Shift<Pawn_Up_Right<C, N>>(b);
+            return Shift<Pawn_Up_Left<Us, Next>>(b) | Shift<Pawn_Up_Right<Us, Next>>(b);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Square Lsb(Bitboard b)
@@ -48,9 +53,19 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Square Pop_Lsb(ref Bitboard bb)
         {
-            int sq = BitOperations.TrailingZeroCount(bb);
-            bb &= bb - 1;
-            return (Square)sq;
+            if (Bmi1.X64.IsSupported)
+            {
+                ulong value = bb.Raw;
+                int sq = BitOperations.TrailingZeroCount(value);
+                bb = Bmi1.X64.ResetLowestSetBit(value);
+                return (Square)sq;
+            }
+            else
+            {
+                int sq = BitOperations.TrailingZeroCount(bb);
+                bb &= bb - 1;
+                return (Square)sq;
+            }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Square Rotate_180(Square sq)

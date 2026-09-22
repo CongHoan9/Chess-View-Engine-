@@ -36,33 +36,34 @@ namespace Chess
         public static readonly PieceTypeArray2 Slider = Create_Slider();
         public static readonly PieceArray12 Pieces = Create_Pieces();
         public static readonly ColorArray2 Colors = Create_Colors();
-        public static readonly CastlingRightsArray2 AllWhiteCastlingRights = Create_All_White_Castling_Rights();
-        public static readonly CastlingRightsArray2 AllBlackCastlingRights = Create_All_Black_Castling_Rights();
+        public static readonly AllCastlingRights AllWhiteCastlingRights = Create_All_White_Castling_Rights();
+        public static readonly AllCastlingRights AllBlackCastlingRights = Create_All_Black_Castling_Rights();
         public static readonly DirectionArray8 Directions = Create_Directions();
         public static readonly MoveTypeArray4 MoveTypes = Create_Move_Types();
         public static readonly GenTypeArray4 GenTypes = Create_Gen_Types();
         public static readonly IntArray8 KnightSteps = Create_Knight_Steps();
         public static readonly IntArray8 KingSteps = Create_King_Steps();
         public static readonly IntArray8 seeds = Create_Seeds();
-
+        [SuppressGCTransition]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Value Piece_Value(Piece piece)
         {
             return PieceValue[(int)piece];
         }
-
+        [SuppressGCTransition]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Value Piece_Value(Color color, PieceType type)
         {
             return Piece_Value(FuncBit.Make_Piece(color, type));
         }
-
+        [SuppressGCTransition]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Seed_Of(Rank rank)
         {
             return seeds[(int)rank];
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ValueArray16 Create_Piece_Value()
         {
             ValueArray16 values = default;
@@ -85,7 +86,8 @@ namespace Chess
             *value = VALUE_ZERO;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static DirectionArray4 Create_Rook_Directions()
         {
             DirectionArray4 values = default;
@@ -96,7 +98,8 @@ namespace Chess
             *value = WEST;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static DirectionArray4 Create_Bishop_Directions()
         {
             DirectionArray4 values = default;
@@ -107,7 +110,8 @@ namespace Chess
             *value = NORTH_WEST;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static PieceTypeArray6 Create_Piece_Types()
         {
             PieceTypeArray6 values = default;
@@ -120,7 +124,8 @@ namespace Chess
             *value = KING;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static PieceTypeArray2 Create_Slider()
         {
             PieceTypeArray2 values = default;
@@ -129,7 +134,8 @@ namespace Chess
             *value = ROOK;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static PieceArray12 Create_Pieces()
         {
             PieceArray12 values = default;
@@ -148,7 +154,8 @@ namespace Chess
             *value = B_KING;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ColorArray2 Create_Colors()
         {
             ColorArray2 values = default;
@@ -157,25 +164,28 @@ namespace Chess
             *value = BLACK;
             return values;
         }
-
-        private static CastlingRightsArray2 Create_All_White_Castling_Rights()
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static AllCastlingRights Create_All_White_Castling_Rights()
         {
-            CastlingRightsArray2 values = default;
+            AllCastlingRights values = default;
             CastlingRights* value = (CastlingRights*)&values;
             *value++ = WHITE_OO;
             *value = WHITE_OOO;
             return values;
         }
-
-        private static CastlingRightsArray2 Create_All_Black_Castling_Rights()
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static AllCastlingRights Create_All_Black_Castling_Rights()
         {
-            CastlingRightsArray2 values = default;
+            AllCastlingRights values = default;
             CastlingRights* value = (CastlingRights*)&values;
             *value++ = BLACK_OO;
             *value = BLACK_OOO;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static DirectionArray8 Create_Directions()
         {
             DirectionArray8 values = default;
@@ -190,7 +200,8 @@ namespace Chess
             *value = SOUTH_WEST;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static MoveTypeArray4 Create_Move_Types()
         {
             MoveTypeArray4 values = default;
@@ -201,7 +212,8 @@ namespace Chess
             *value = CASTLING;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static GenTypeArray4 Create_Gen_Types()
         {
             GenTypeArray4 values = default;
@@ -212,7 +224,8 @@ namespace Chess
             *value = EVASION;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static IntArray8 Create_Knight_Steps()
         {
             IntArray8 values = default;
@@ -227,7 +240,8 @@ namespace Chess
             *value = 17;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static IntArray8 Create_King_Steps()
         {
             IntArray8 values = default;
@@ -242,7 +256,8 @@ namespace Chess
             *value = 9;
             return values;
         }
-
+        [SuppressGCTransition]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static IntArray8 Create_Seeds()
         {
             IntArray8 values = default;
@@ -316,7 +331,7 @@ namespace Chess
     }
     [InlineArray(2)]
     [StructLayout(LayoutKind.Sequential)]
-    public struct CastlingRightsArray2 
+    public struct AllCastlingRights 
     { 
         public const int Length = 2;
         private CastlingRights Raw; 

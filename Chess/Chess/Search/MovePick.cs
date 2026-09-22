@@ -34,12 +34,12 @@ namespace Chess
     }
 
     // The MovePick class is used to pick one pseudo-legal move at a time from the
-    // current position. The most important method is Next_Move(), which emits one
+    // current positioNext. The most important method is Next_Move(), which emits one
     // new pseudo-legal move on every call, until there are no moves left, when
     // Move::none() is returned. In order to improve the efficiency of the alpha-beta
     // algorithm, MovePick attempts to return the moves which are most likely to get
     // a cut-off first.
-    public unsafe ref struct MovePick<C, N> where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+    public unsafe ref struct MovePick<Us, Next> where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
     {
         private readonly ref Position Pos;
         private readonly History MainHistory;
@@ -77,7 +77,7 @@ namespace Chess
             else
             {
                 Stage = Depth > 0
-                    ? (Move_In_List<NON_EVASIONs>() ? MovePick_Stage.MAIN_TT : MovePick_Stage.CAPTURE_INIT)
+                    ? (Move_In_List<Non_Evasions>() ? MovePick_Stage.MAIN_TT : MovePick_Stage.CAPTURE_INIT)
                     : (Move_In_List<Captures>() ? MovePick_Stage.QSEARCH_TT : MovePick_Stage.QCAPTURE_INIT);
             }
         }
@@ -130,7 +130,7 @@ namespace Chess
         // Assigns a numerical value to each move in a list, used for sorting.
         // Captures are ordered by Most Valuable Victim (MVV), preferring captures
         // with a good history. Quiets moves are ordered using the history tables.
-        private int Score<T>(MoveList<T, C, N> moveList) where T : struct, IGenType
+        private int Score<T>(MoveList<T, Us, Next> moveList) where T : struct, IGenType
         {
             int it = Cur;
 
@@ -162,7 +162,7 @@ namespace Chess
 
             if (T.Type == GenType.QUIET)
             {
-                Value value = 2 * MainHistory.Get_Quiet(C.Value, move);
+                Value value = 2 * MainHistory.Get_Quiet(Us.Value, move);
                 value += MainHistory.Get_Piece_To(piece, to);
 
                 if (move == Killer0)
@@ -188,7 +188,7 @@ namespace Chess
                 return Piece_Value(capturedPiece) + (1 << 28);
             }
 
-            return MainHistory.Get_Quiet(C.Value, move) + MainHistory.Get_Piece_To(piece, to);
+            return MainHistory.Get_Quiet(Us.Value, move) + MainHistory.Get_Piece_To(piece, to);
         }
 
         // Returns the next move. This never returns the TT move,
@@ -294,7 +294,7 @@ namespace Chess
                 case MovePick_Stage.CAPTURE_INIT:
                 case MovePick_Stage.QCAPTURE_INIT:
                 {
-                    MoveList<Captures, C, N> moveList = new(ref Pos);
+                    MoveList<Captures, Us, Next> moveList = new(ref Pos);
 
                     Cur = EndBadCaptures = 0;
                     EndCur = EndCaptures = Score(moveList);
@@ -320,7 +320,7 @@ namespace Chess
                 case MovePick_Stage.QUIET_INIT:
                     if (!SkipQuiets)
                     {
-                        MoveList<Quiets, C, N> moveList = new(ref Pos);
+                        MoveList<Quiets, Us, Next> moveList = new(ref Pos);
                         EndCur = EndGenerated = Score(moveList);
                         Partial_Insertion_Sort(Cur, EndCur, -3560 * Depth);
                     }
@@ -373,7 +373,7 @@ namespace Chess
 
                 case MovePick_Stage.EVASION_INIT:
                 {
-                    MoveList<Evasions, C, N> moveList = new(ref Pos);
+                    MoveList<Evasions, Us, Next> moveList = new(ref Pos);
 
                     Cur = 0;
                     EndCur = EndGenerated = Score<Evasions>(moveList);
@@ -394,7 +394,7 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private readonly Piece Captured_Piece(Move move, Square to)
         {
-            return Type_Of(move) == EN_PASSANT ? Make_Piece<Pawn>(N.Value) : Pos.Piece_On(to);
+            return Type_Of(move) == EN_PASSANT ? Make_Piece<Pawn>(Next.Value) : Pos.Piece_On(to);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -414,7 +414,7 @@ namespace Chess
                 return false;
             }
 
-            MoveList<T, C, N> moveList = new(ref Pos);
+            MoveList<T, Us, Next> moveList = new(ref Pos);
             foreach (Move move in moveList)
             {
                 if (move == TTMove)

@@ -17,9 +17,9 @@ namespace Chess
             return pos.SideToMove == WHITE ? Evaluate_Position<White, Black>(ref pos, networks) : Evaluate_Position<Black, White>(ref pos, networks);
         }
 
-        public static Value Evaluate_Position<C, N>(ref Position pos, NnueNetworks networks = null) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Value Evaluate_Position<Us, Next>(ref Position pos, NnueNetworks networks = null) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return networks != null && networks.Can_Evaluate ? EvaluateNNUE.Evaluate<C, N>(ref pos, networks) : Classical_Eval<C, N>(ref pos);
+            return networks != null && networks.Can_Evaluate ? EvaluateNNUE.Evaluate<Us, Next>(ref pos, networks) : Classical_Eval<Us, Next>(ref pos);
         }
 
         public static Value Classical_Eval(ref Position pos)
@@ -27,11 +27,11 @@ namespace Chess
             return pos.SideToMove == WHITE ? Classical_Eval<White, Black>(ref pos) : Classical_Eval<Black, White>(ref pos);
         }
 
-        public static Value Classical_Eval<C, N>(ref Position pos) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Value Classical_Eval<Us, Next>(ref Position pos) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
             Value score = Evaluate_Side(ref pos, WHITE) - Evaluate_Side(ref pos, BLACK);
-            score += Tempo * C.Sign;
-            return score * C.Sign;
+            score += Tempo * Us.Sign;
+            return score * Us.Sign;
         }
 
         public static Value Simple_Eval(ref Position pos)
@@ -39,9 +39,9 @@ namespace Chess
             return pos.SideToMove == WHITE ? Simple_Eval<White, Black>(ref pos) : Simple_Eval<Black, White>(ref pos);
         }
 
-        public static Value Simple_Eval<C, N>(ref Position pos) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Value Simple_Eval<Us, Next>(ref Position pos) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return Classical_Eval<C, N>(ref pos);
+            return Classical_Eval<Us, Next>(ref pos);
         }
 
         private static Value Evaluate_Side(ref Position pos, Color side)

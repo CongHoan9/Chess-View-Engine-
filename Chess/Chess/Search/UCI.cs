@@ -1,9 +1,7 @@
 using System.IO;
-using System.Text;
 using static Chess.File;
 using static Chess.FuncBit;
 using static Chess.MoveType;
-
 namespace Chess
 {
     using Value = Int32;
@@ -44,16 +42,16 @@ namespace Chess
             string command = Misc.To_Lower(tokens[0]);
             return command switch
             {
-                "uci" => Print_UCI(),
+                //"uci" => Print_UCI(),
                 "isready" => "readyok",
-                "ucinewgame" => Handle_New_Game(),
-                "position" => Handle_Position(tokens),
-                "setoption" => Handle_SetOption(tokens),
-                "go" => Handle_Go(tokens),
-                "stop" => Handle_Stop(),
-                "d" => Engine.pos.Show(Engine.pos.SideToMove),
-                "fen" => Engine.Fen(),
-                "eval" => Engine.Trace_Eval(),
+                //"ucinewgame" => Handle_New_Game(),
+                //"position" => Handle_Position(tokens),
+                //"setoption" => Handle_SetOption(tokens),
+                //"go" => Handle_Go(tokens),
+                //"stop" => Handle_Stop(),
+                //"d" => Engine.pos.Show(Engine.pos.SideToMove),
+                //"fen" => Engine.Fen(),
+                //"eval" => Engine.Trace_Eval(),
                 "perft" => Handle_Perft(tokens),
                 "quit" => "quit",
                 _ => string.Empty,
@@ -99,10 +97,10 @@ namespace Chess
             return new string(text[..4]);
         }
 
-        private static bool Try_Parse_Move<C, N>(ref Position pos, string movetext, out Move move) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        private static bool Try_Parse_Move<Us, Next>(ref Position pos, string movetext, out Move move) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
             string target = movetext.Trim().ToLowerInvariant();
-            MoveList<Legal, C, N> moves = new(ref pos);
+            MoveList<Legal, Us, Next> moves = new(ref pos);
             foreach (Move candidate in moves)
             {
                 if (Move_To_String(ref pos, candidate).Equals(target, StringComparison.OrdinalIgnoreCase))
@@ -115,82 +113,82 @@ namespace Chess
             return false;
         }
 
-        private string Print_UCI()
-        {
-            StringBuilder builder = new();
-            builder.AppendLine(Misc.Engine_Info(true));
-            foreach (UCIOption option in Engine.Options)
-            {
-                builder.AppendLine(option.To_UCI());
-            }
-            builder.Append("uciok");
-            return builder.ToString();
-        }
+        //private string Print_UCI()
+        //{
+        //    StringBuilder builder = default;
+        //    builder.AppendLine(Misc.Engine_Info(true));
+        //    foreach (UCIOption option in Engine.Options)
+        //    {
+        //        builder.AppendLine(option.To_UCI());
+        //    }
+        //    builder.Append("uciok");
+        //    return builder.ToString();
+        //}
 
-        private string Handle_New_Game()
-        {
-            Engine.New_Game();
-            return string.Empty;
-        }
+        //private string Handle_New_Game()
+        //{
+        //    Engine.New_Game();
+        //    return string.Empty;
+        //}
 
-        private string Handle_SetOption(string[] tokens)
-        {
-            int nameindex = Array.FindIndex(tokens, token => token.Equals("name", StringComparison.OrdinalIgnoreCase));
-            int valueindex = Array.FindIndex(tokens, token => token.Equals("value", StringComparison.OrdinalIgnoreCase));
-            if (nameindex < 0)
-            {
-                return string.Empty;
-            }
-            string name = valueindex > nameindex ? string.Join(' ', tokens[(nameindex + 1)..valueindex]) : string.Join(' ', tokens[(nameindex + 1)..]);
-            string value = valueindex >= 0 && valueindex + 1 < tokens.Length ? string.Join(' ', tokens[(valueindex + 1)..]) : string.Empty;
-            Engine.Options.Set_Option(name, value);
-            return string.Empty;
-        }
+        //private string Handle_SetOption(string[] tokens)
+        //{
+        //    int nameindex = Array.FindIndex(tokens, token => token.Equals("name", StringComparison.OrdinalIgnoreCase));
+        //    int valueindex = Array.FindIndex(tokens, token => token.Equals("value", StringComparison.OrdinalIgnoreCase));
+        //    if (nameindex < 0)
+        //    {
+        //        return string.Empty;
+        //    }
+        //    string name = valueindex > nameindex ? string.Join(' ', tokens[(nameindex + 1)..valueindex]) : string.Join(' ', tokens[(nameindex + 1)..]);
+        //    string value = valueindex >= 0 && valueindex + 1 < tokens.Length ? string.Join(' ', tokens[(valueindex + 1)..]) : string.Empty;
+        //    Engine.Options.Set_Option(name, value);
+        //    return string.Empty;
+        //}
 
-        private string Handle_Position(string[] tokens)
-        {
-            string fen = Fens.Defaults[0];
-            List<string> moves = [];
-            if (tokens.Length >= 2 && tokens[1].Equals("startpos", StringComparison.OrdinalIgnoreCase))
-            {
-                fen = Fens.Defaults[0];
-            }
-            else if (tokens.Length >= 3 && tokens[1].Equals("fen", StringComparison.OrdinalIgnoreCase))
-            {
-                int movesindex = Array.FindIndex(tokens, token => token.Equals("moves", StringComparison.OrdinalIgnoreCase));
-                int fenend = movesindex >= 0 ? movesindex : tokens.Length;
-                fen = string.Join(' ', tokens[2..fenend]);
-            }
-            int movestokenindex = Array.FindIndex(tokens, token => token.Equals("moves", StringComparison.OrdinalIgnoreCase));
-            if (movestokenindex >= 0)
-            {
-                for (int i = movestokenindex + 1; i < tokens.Length; ++i)
-                {
-                    moves.Add(tokens[i]);
-                }
-            }
-            Engine.Set_Position(fen, moves, Engine.Options.Get_Bool("UCI_Chess960"));
-            return string.Empty;
-        }
+        //private string Handle_Position(string[] tokens)
+        //{
+        //    string fen = Fens.Defaults[0];
+        //    List<string> moves = [];
+        //    if (tokens.Length >= 2 && tokens[1].Equals("startpos", StringComparison.OrdinalIgnoreCase))
+        //    {
+        //        fen = Fens.Defaults[0];
+        //    }
+        //    else if (tokens.Length >= 3 && tokens[1].Equals("fen", StringComparison.OrdinalIgnoreCase))
+        //    {
+        //        int movesindex = Array.FindIndex(tokens, token => token.Equals("moves", StringComparison.OrdinalIgnoreCase));
+        //        int fenend = movesindex >= 0 ? movesindex : tokens.Length;
+        //        fen = string.Join(' ', tokens[2..fenend]);
+        //    }
+        //    int movestokenindex = Array.FindIndex(tokens, token => token.Equals("moves", StringComparison.OrdinalIgnoreCase));
+        //    if (movestokenindex >= 0)
+        //    {
+        //        for (int i = movestokenindex + 1; i < tokens.Length; ++i)
+        //        {
+        //            moves.Add(tokens[i]);
+        //        }
+        //    }
+        //    Engine.Set_Position(fen, moves, Engine.Options.Get_Bool("UCI_Chess960"));
+        //    return string.Empty;
+        //}
 
-        private string Handle_Go(string[] tokens)
-        {
-            Search_Limits limits = Parse_Limits(tokens);
-            if (limits.Perft > 0)
-            {
-                Handle_Perft(limits.Perft);
-            }
-            Search_Result result = Engine.Go(limits);
-            string bestmove = result.BestMove == Move.None() ? "0000" : Move_To_String(ref Engine.pos, result.BestMove);
-            Console.WriteLine($"info depth {result.Depth} score {Format_Score(result.Score)} nodes {result.Nodes} time {(long)result.Time.TotalMilliseconds} pv {bestmove}\nbestmove {bestmove}");
-            return "\n";
-        }
+        //private string Handle_Go(string[] tokens)
+        //{
+        //    Search_Limits limits = Parse_Limits(tokens);
+        //    if (limits.Perft > 0)
+        //    {
+        //        Handle_Perft(limits.Perft);
+        //    }
+        //    Search_Result result = Engine.Go(limits);
+        //    string bestmove = result.BestMove == Move.None() ? "0000" : Move_To_String(ref Engine.pos, result.BestMove);
+        //    Console.WriteLine($"info depth {result.Depth} score {Format_Score(result.Score)} nodes {result.Nodes} time {(long)result.Time.TotalMilliseconds} pv {bestmove}\nbestmove {bestmove}");
+        //    return "\n";
+        //}
 
-        private string Handle_Stop()
-        {
-            Engine.Stop();
-            return string.Empty;
-        }
+        //private string Handle_Stop()
+        //{
+        //    Engine.Stop();
+        //    return string.Empty;
+        //}
 
         private static string Handle_Perft(string[] tokens)
         {
@@ -206,7 +204,7 @@ namespace Chess
 
         public static Search_Limits Parse_Limits(string[] tokens)
         {
-            Search_Limits limits = new();
+            Search_Limits limits = default;
             for (int i = 1; i < tokens.Length; ++i)
             {
                 string token = tokens[i].ToLowerInvariant();
@@ -260,10 +258,10 @@ namespace Chess
             return limits;
         }
 
-        private static string Format_Score(Value value)
-        {
-            Score score = new(value);
-            return score.Is_Mate() ? $"mate {score.Mate_In()}" : $"cp {score.To_Centipawns()}";
-        }
+        //private static string Format_Score(Value value)
+        //{
+        //    Score score = new(value);
+        //    return score.Is_Mate() ? $"mate {score.Mate_In()}" : $"cp {score.To_Centipawns()}";
+        //}
     }
 }

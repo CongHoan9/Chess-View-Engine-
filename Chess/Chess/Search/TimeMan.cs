@@ -25,10 +25,10 @@ namespace Chess
                 Init_Core<Black, White>(limits, ply, options, ref originalTimeAdjust);
         }
 
-        public void Init<C, N>(Search_Limits limits, int ply, UCIOption_Map options) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public void Init<Us, Next>(Search_Limits limits, int ply, UCIOption_Map options) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
             double originalTimeAdjust = -1.0;
-            Init_Core<C, N>(limits, ply, options, ref originalTimeAdjust);
+            Init_Core<Us, Next>(limits, ply, options, ref originalTimeAdjust);
         }
 
         public long Optimum() { return OptimumTime; }
@@ -60,10 +60,10 @@ namespace Chess
         // the bounds of time allowed for the current game ply. We currently support:
         //      1) x basetime (+ z increment)
         //      2) x moves in y seconds (+ z increment)
-        private void Init_Core<C, N>(Search_Limits limits,
+        private void Init_Core<Us, Next>(Search_Limits limits,
                                   int ply,
                                   UCIOption_Map options,
-                                  ref double originalTimeAdjust) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+                                  ref double originalTimeAdjust) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
             long npmsec = options?.Get_Int("nodestime", 0) ?? 0;
 
@@ -73,8 +73,8 @@ namespace Chess
             StartTime = 0;
             UseNodesTime = npmsec != 0;
 
-            long time = C.Value == Color.WHITE ? limits.WhiteTime : limits.BlackTime;
-            long inc = C.Value == Color.WHITE ? limits.WhiteInc : limits.BlackInc;
+            long time = Us.Value == Color.WHITE ? limits.WhiteTime : limits.BlackTime;
+            long inc = Us.Value == Color.WHITE ? limits.WhiteInc : limits.BlackInc;
 
             if (limits.MoveTime > 0)
             {

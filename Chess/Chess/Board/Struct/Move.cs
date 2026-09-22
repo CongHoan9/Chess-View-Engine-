@@ -8,7 +8,7 @@ namespace Chess
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Move : IEquatable<Move>
     {
-        public ushort Raw { get; }
+        public readonly ushort Raw { get; }
         public static readonly Move MoveNull = new(65);
         public static implicit operator ushort(Move m) => m.Raw;
         public static implicit operator Move(ushort m) => new(m);

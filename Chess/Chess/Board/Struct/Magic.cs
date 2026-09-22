@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 namespace Chess
 {
     [StructLayout(LayoutKind.Sequential)]
@@ -12,7 +13,14 @@ namespace Chess
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int Index(Bitboard occupied)
         {
-            return (int)(((occupied & mask) * magic).Raw >> Shift);
+            if (Bmi2.X64.IsSupported)
+            {
+                return (int)Bmi2.X64.ParallelBitExtract(occupied.Raw, mask.Raw);
+            }
+            else
+            {
+                return (int)(((occupied & mask) * magic).Raw >> Shift);
+            }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Bitboard Attacks_BB(Bitboard occupied)

@@ -93,47 +93,47 @@ namespace Chess
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Up<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+    public readonly struct Pawn_Up<Us, Next> : IDirection where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
     {
-        public static Direction Offset => C.Up;
+        public static Direction Offset => Us.Up;
         public static Bitboard Mask => ulong.MaxValue;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Shift(Bitboard bb)
         {
-            return C.Pawn_Up(bb);
+            return Us.Pawn_Up(bb);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Up_Left<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+    public readonly struct Pawn_Up_Left<Us, Next> : IDirection where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
     {
-        public static Direction Offset => C.UpLeft;
+        public static Direction Offset => Us.UpLeft;
         public static Bitboard Mask => ulong.MaxValue;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Shift(Bitboard bb)
         {
-            return C.Pawn_Up_Left(bb);
+            return Us.Pawn_Up_Left(bb);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Up_Right<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+    public readonly struct Pawn_Up_Right<Us, Next> : IDirection where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
     {
-        public static Direction Offset => C.UpRight;
+        public static Direction Offset => Us.UpRight;
         public static Bitboard Mask => ulong.MaxValue;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Shift(Bitboard bb)
         {
-            return C.Pawn_Up_Right(bb);
+            return Us.Pawn_Up_Right(bb);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Pawn_Double_Up<C, N> : IDirection where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+    public readonly struct Pawn_Double_Up<Us, Next> : IDirection where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
     {
-        public static Direction Offset => C.Double;
+        public static Direction Offset => Us.Double;
         public static Bitboard Mask => ulong.MaxValue;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Shift(Bitboard bb)
         {
-            return C.Pawn_Double_Up(bb);
+            return Us.Pawn_Double_Up(bb);
         }
     }
 }

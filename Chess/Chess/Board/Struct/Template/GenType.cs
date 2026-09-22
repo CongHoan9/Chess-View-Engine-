@@ -8,9 +8,9 @@ namespace Chess
     {
         public static GenType Type => CAPTURE; 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Enemies<C, N>(ref Position pos) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Bitboard Enemies<Us, Next>(ref Position pos) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return pos.Get_Pieces(N.Value);
+            return pos.Get_Pieces(Next.Value);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
@@ -18,9 +18,9 @@ namespace Chess
     {
         public static GenType Type => QUIET;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Enemies<C, N>(ref Position pos) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Bitboard Enemies<Us, Next>(ref Position pos) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return pos.Get_Pieces(N.Value);
+            return pos.Get_Pieces(Next.Value);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
@@ -28,19 +28,19 @@ namespace Chess
     {
         public static GenType Type => EVASION;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Enemies<C, N>(ref Position pos) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Bitboard Enemies<Us, Next>(ref Position pos) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
             return pos.Checkers();
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct NON_EVASIONs : IGenType
+    public readonly struct Non_Evasions : IGenType
     {
         public static GenType Type => NON_EVASION;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Enemies<C, N>(ref Position pos) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Bitboard Enemies<Us, Next>(ref Position pos) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return pos.Get_Pieces(N.Value);
+            return pos.Get_Pieces(Next.Value);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
@@ -48,9 +48,9 @@ namespace Chess
     {
         public static GenType Type => LEGAL;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bitboard Enemies<C, N>(ref Position pos) where C : struct, IColor<C, N> where N : struct, IColor<N, C>
+        public static Bitboard Enemies<Us, Next>(ref Position pos) where Us : struct, IColor<Us, Next> where Next : struct, IColor<Next, Us>
         {
-            return pos.Get_Pieces(N.Value);
+            return pos.Get_Pieces(Next.Value);
         }
     }
 }

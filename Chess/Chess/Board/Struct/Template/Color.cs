@@ -22,7 +22,7 @@ namespace Chess
         public static CastlingRights KingSide => WHITE_OO;
         public static CastlingRights QueenSide => WHITE_OOO;
         public static CastlingRights CastlingRights => WHITE_CASLING;
-        public static ref readonly CastlingRightsArray2 AllCastlingRights => ref Types.AllWhiteCastlingRights;
+        public static ref readonly AllCastlingRights AllCastlingRights => ref AllWhiteCastlingRights;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Pawn_Up(Bitboard bb) => bb << 8;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -47,7 +47,7 @@ namespace Chess
         public static CastlingRights KingSide => BLACK_OO;
         public static CastlingRights QueenSide => BLACK_OOO;
         public static CastlingRights CastlingRights => BLACK_CASLING;
-        public static ref readonly CastlingRightsArray2 AllCastlingRights => ref AllBlackCastlingRights;
+        public static ref readonly AllCastlingRights AllCastlingRights => ref AllBlackCastlingRights;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Bitboard Pawn_Up(Bitboard bb) => bb >> 8;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
